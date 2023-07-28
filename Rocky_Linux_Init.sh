@@ -18,11 +18,6 @@ function dash()
 	linebreak
 }
 
-function test()
-{
-	linebreak
-	linebreak
-}
 
 function logtime()
 {
@@ -31,54 +26,51 @@ function logtime()
 }
 
 #################################
-
 ### STEP 1 #########################
 
-#ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
-echo '### STEP 1 UTC to KST Converter' >> $(pwd)/$logfilename.log
-
-echo '' >> $(pwd)/$logfilename.log
-
-
-echo '!) EXECUTE COMMAND LOG' >> $(pwd)/$logfilename.log
+echo '### STEP 1 UTC to KST Converter' >> $logfile
+#
+linebreak
+#
+echo '!) EXECUTE COMMAND LOG' >> $logfile
+#
 logtime
-echo -e "$ldate\t\tln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime" >> $(pwd)/$logfilename.log
-#echo 'ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime' >> $(pwd)/$logfilename.log
-
-echo '' >> $(pwd)/$logfilename.log
-
-echo '!) COMMAND RESULT' >> $(pwd)/$logfilename.log
-#timedatectl | grep Time >> $(pwd)/$logfilename.log
-timedatectl | awk -F":" '/Time zone/ {print $0}' | sed 's/^ *//g' >> $(pwd)/$logfilename.log
-date >> $(pwd)/$logfilename.log
-
-echo '' >> $(pwd)/$logfilename.log
-echo '--------------------------------' >> $(pwd)/$logfilename.log
-echo '' >> $(pwd)/$logfilename.log
-
+ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+echo -e "$ldate\t\tln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime" >> $logfile
+#
+linebreak
+#
+echo '!) COMMAND RESULT' >> $logfile
+#timedatectl | grep Time >> $logfile
+timedatectl | awk -F":" '/Time zone/ {print $0}' | sed 's/^ *//g' >> $logfile
+date >> $logfile
+#
+dash
+#
 #sleep 1
-
+#####################################
 ### STEP 2 #########################
-echo '### STEP 2 History Time Logging' >> $(pwd)/$logfilename.log
-
-echo '' >> $(pwd)/$logfilename.log
-
-echo '!) EXECUTE COMMAND LOG' >> $(pwd)/$logfilename.log
+echo '### STEP 2 History Time Logging' >> $logfile
+#
+linebreak
+#
+echo '!) EXECUTE COMMAND LOG' >> $logfile
+#
 logtime
-echo -e "$ldate\t\techo "HISTTIMEFORMAT=\"[%Y-%m-%d_%H:%M:%S]  \"" >> /etc/profile" >> $(pwd)/$logfilename.log
+echo "HISTTIMEFORMAT=\"[%Y-%m-%d_%H:%M:%S]  \"" >> /etc/profile
+echo -e "$ldate\t\techo "HISTTIMEFORMAT=\"[%Y-%m-%d_%H:%M:%S]  \"" >> /etc/profile" >> $logfile
 logtime
-echo -e "$ldate\t\tsource /etc/profile" >> /etc/profile"" >> $(pwd)/$logfilename.log
-
-echo '' >> $(pwd)/$logfilename.log
-
-echo '!) COMMAND RESULT' >> $(pwd)/$logfilename.log
 source /etc/profile
-history 10 >> $(pwd)/$logfilename.log
+echo -e "$ldate\t\tsource /etc/profile" >> $logfile
 
-echo '' >> $(pwd)/$logfilename.log
-echo '--------------------------------' >> $(pwd)/$logfilename.log
-echo '' >> $(pwd)/$logfilename.log
+linebreak
+
+echo '!) COMMAND RESULT' >> $logfile
+source /etc/profile
+history 10 >> $logfile
+
+dash
 
 
 
@@ -101,7 +93,7 @@ echo -e "$ldate\t\tsed -i '/GSSAPIAuthentication yes/ s/^/#/' /etc/ssh/sshd_conf
 logtime
 echo -e "$ldate\t\tsystemctl restart sshd" >> $logfile
 
-echo '' >> $logfile
+linebreak
 
 echo '!) COMMAND RESULT' >> $logfile
 sed -n '/PermitRootLogin no/p' /etc/ssh/sshd_config >> $logfile
@@ -123,7 +115,7 @@ echo -e "$ldate\t\techo 'Sniper13@$' | passwd --stdin root" >> $logfile
 logtime
 echo -e "$ldate\t\techo 'Sniper13@$' | passwd --stdin rocky" >> $logfile
 
-echo '' >> $logfile
+linebreak
 
 echo '!) COMMAND RESULT' >> $logfile
 echo 'No Result' >> $logfile
@@ -140,7 +132,7 @@ echo '!) EXECUTE COMMAND LOG' >> $logfile
 logtime
 echo -e "$ldate\t\techo "root" >> /etc/ftpusers" >> $logfile
 
-echo '' >> $logfile
+linebreak
 
 echo '!) COMMAND RESULT' >> $logfile
 cat /etc/ftpusers >> $logfile
