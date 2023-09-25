@@ -3,7 +3,13 @@
 #Update : 20220922
 #JEON MYEONG GEUN
 #Cloud Security Setting Scripts(CentOS Linux release 7.6.1810 (Core))
+#----------------------------------------------------------------------
+#Update : 20230922
+#NO-HUN
+#Cloud Security Setting Scripts(CentOS release 6.6 (Final))
 #Start of Shell Scripts
+
+
 
 TITLE="Security Setting [WINS Cloud MSP]"
 function DialogSetup()
@@ -13,7 +19,9 @@ function DialogSetup()
 	if [ -z "$dialogRPM" ]
 		then
 		#yes |unzip /root/WinsCloud_Tool/2.RPM/4.dialog/8-07-14_MegaCLI.zip -d /root/WinsCloud_Tool/2.RPM/4.dialog/ &> /dev/null
-		rpm -ivh /root/WinsCloud_Tool/2.RPM/4.dialog/dialog-1.2-4.20130523.el7.x86_64.rpm &> /dev/null
+                # dialog 버전 변경
+		#rpm -ivh /root/WinsCloud_Tool/2.RPM/4.dialog/dialog-1.2-4.20130523.el7.x86_64.rpm &> /dev/null
+		rpm -ivh /root/WinsCloud_Tool/2.RPM/4.dialog/dialog-1.1-10.20080819.el6.x86_64.rpm &> /dev/null
 		dialogRPM=$(rpm -qa |grep dialog)
 		if [ -n "$dialogRPM" ]
 			then
@@ -162,13 +170,12 @@ function PwdComplexityExcute()
     elif [ $(cat ./.SecurityInfo | grep "U-02" | awk -F ": " '{print $2}') == "WARN\n" ]
     	then
     	filebackup system-auth /etc/pam.d/system-auth "01.[U-02|Passwd Complexity ] :"
-		#line=$(egrep -n password /etc/pam.d/system-auth | egrep "requisite" | egrep "pam_cracklib.so" | awk -F ":" '{print$1}' | sed -n 1p)"s"
-		#if [ "$line" = "s" ]
-		#	then
-		#	echo "01.[U-02|Passwd Complexity ] : Error\n"
-		#else
-		#	sed -i "$line/.*/$setValue/g" /etc/pam.d/system-auth
-		sed -i'' -r -e "/password    requisite     pam_pwquality.so/a\password    required      pam_cracklib.so retry=3 minlen=9 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		#sed -i'' -r -e "/password    requisite     pam_pwquality.so/a\password    required      pam_cracklib.so retry=3 minlen=9 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		# 원복 설정 백업
+		sed -i '/password    requisite     pam_cracklib.so try_first_pass retry=3 type=/ s/^/#/' /etc/pam.d/system-auth
+		# 패스워드 복잡도 수행
+		sed -i'' -r -e "/password    requisite     pam_cracklib.so try_first_pass retry=3 type=/a\password    requisite     pam_cracklib.so try_first_pass retry=3 type=minlen=9 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		
 			minlen=$(cat /etc/pam.d/system-auth | grep minlen | awk -F "minlen=" '{print $2}'| awk -F " " '{print $1}')
 			dcredit=$(cat /etc/pam.d/system-auth | grep dcredit | awk -F "dcredit=" '{print $2}'| awk -F " " '{print $1}')
 			ucredit=$(cat /etc/pam.d/system-auth | grep ucredit | awk -F "ucredit=" '{print $2}'| awk -F " " '{print $1}')
@@ -176,10 +183,7 @@ function PwdComplexityExcute()
 			ocredit=$(cat /etc/pam.d/system-auth | grep ocredit | awk -F "ocredit=" '{print $2}'| awk -F " " '{print $1}')
 			CompareValue "01.[U-02|Passwd Complexity ] :" "9-1-1-1-1" "$minlen$dcredit$ucredit$lcredit$ocredit"
 			echo "  - Before Value : $preValue"
-			echo "  - After  Value : $(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_cracklib.so")"
-			#echo " * File  : /etc/pam.d/system-auth"
-			#echo " * Value : $(cat /etc/pam.d/system-auth | egrep "minlen|dcredit|ucredit|lcredit|ocredit" | grep -v '#')"
-		#cfi		
+			echo "  - After  Value : $(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_cracklib.so")"	
     else
 		echo "01.[U-02|Passwd Complexity ] : Error\n"
     fi
