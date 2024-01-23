@@ -95,6 +95,325 @@ function SshRestart()	#	SSH 데몬 재시작 함수
     esac
 }
 
+
+
+###############################################################################################################
+
+# 2021 클라우드 취약점 조치 항목 추가
+
+###############################################################################################################
+
+
+# U-05 패스워드 파일 보호
+function U-05()
+{
+	## echo -e " U-05. 패스워드 파일 보호" >> $(pwd)/LOG/security/$logfilename.log
+	
+	# /etc/shadow 존재 유무 확인
+	shadow_file="/etc/shadow"
+	passwd_file="/etc/passwd"
+	
+	# 비밀번호가 암호화 되어 있는 계정 수
+	encrypted_count=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	# 전체 계정 수
+	total_accounts=$(grep -c -v '^$' "$passwd_file")
+	
+	if [ -e "$shadow_file" ]; then
+		if [ "$encrypted_count" -eq "$total_accounts" ]; then
+			echo "00.[New U-05|Password file protect ] : SAFE\n" >> ./.SecurityInfo
+		else
+			echo "00.[New U-05|Password file protect ] : WARN\n" >> ./.SecurityInfo
+		fi
+	else
+		echo "00.[New U-05|Password file protect ] : WARN\n" >> ./.SecurityInfo
+	fi
+
+	echo " *suggest: total user : $total_accounts\n" >> ./.SecurityInfo
+	echo " *current: encrypted user password : $encrypted_count\n\n" >> ./.SecurityInfo
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[New U-05|Password file protect ] Check... " 10 55 0
+}
+
+function U-05_execute()
+{
+	#echo " U-05. 패스워드 파일 보호"  >> $(pwd)/LOG/security/$logfilename.log
+	
+	# 설정 파일 백업 수행
+	#filebackup shadow /etc/shadow "File Backup :"
+	
+	# /etc/shadow 존재 유무 확인
+	shadow_file="/etc/shadow"
+	passwd_file="/etc/passwd"
+	
+	# 비밀번호가 암호화 되어 있는 계정 수
+	encrypted_count=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	# 전체 계정 수
+	total_accounts=$(grep -c -v '^$' "$passwd_file")
+	
+	#preValue=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	if [ $(cat ./.SecurityInfo | grep "New U-05" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "00.[New U-05|Password file protect ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "New U-05" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		# 백업 필요 없음
+		pwconv # shadow 파일 사용 명령어
+		if [ -e "$shadow_file" ]; then
+			echo "00.[New U-05|Password file protect ] : Setting Sucess\n "
+		else
+			echo "00.[New U-05|Password file protect ] : Error\n"
+		fi
+		echo "  - Before Value : $encrypted_count"
+		echo "  - After  Value : $(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)"
+    else
+		echo "00.[New U-05|Password file protect ] : Error\n"
+    fi
+}
+
+#####
+
+# U-15 사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정
+
+#####
+
+Homedir=(`ls /home`)
+homecount=$(ls -l /home/ | grep -v total | wc -l)
+#filepermission=$(stat -c %a /etc/bashrc)
+
+
+function Check_permission()
+{
+	if [ $(stat -c %a /etc/bashrc) == 644 ] || [ $(stat -c %a /etc/bashrc) == 640 ] || [ $(stat -c %a /etc/bashrc) == 660 ]
+	then
+		if [ $(stat -c %a /etc/profile) == 644 ] || [ $(stat -c %a /etc/profile) == 640 ] || [ $(stat -c %a /etc/profile) == 660 
+		then
+			sys_permission=true
+		else
+			sys_permission=false
+		fi
+	else
+		sys_permission=false
+	fi
+
+	isgood=0
+	
+	for i in "${Homedir[@]}";
+    do
+		if [ $(stat -c %a /home/$i/.bashrc) == 644 ] || [ $(stat -c %a /home/$i/.bashrc) == 640 ] || [ $(stat -c %a /home/$i/.bashrc) == 660 ]
+		then 
+			if [ $(stat -c %a /home/$i/.bash_profile) == 644 ] || [ $(stat -c %a /home/$i/.bash_profile) == 640 ] || [ $(stat -c %a /home/$i/.bash_profile) == 660 ]
+			then
+				$((isgood++))
+			fi
+		#else
+		fi
+	done
+	
+	if [ $isgood == $homecount ] && [ $sys_permission == true ]
+	then
+		echo "00.[New U-15|System Conf file - Permision ] : SAFE\n" >> ./.SecurityInfo
+	else
+		echo "00.[New U-15|System Conf file - Permision ] : WAE\n" >> ./.SecurityInfo
+	fi
+
+	echo " *suggest: /etc/profile : 644\n           /etc/bashrc : 644\n           /home/유저네임/.bashrc : 644\n           /home/유저네임/.bash_profile : 644\n" >> ./.SecurityInfo
+    echo " *current: /etc/profile : $(stat -c %a /etc/profile)\n           /etc/bashrc : $(stat -c %a /etc/bashrc)" >> ./.SecurityInfo
+	
+	for usr in "${Homedir[@]}";
+	do
+			echo "\n           /home/$usr/.bashrc : $(stat -c %a /home/$i/.bashrc)" >> ./.SecurityInfo
+			echo "\n           /home/$usr/.bash_profile :$(stat -c %a /home/$i/.bash_profile)" >> ./.SecurityInfo
+	done
+	echo "  \n\n" >> ./.SecurityInfo
+
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[New U-15|System Conf file - Permision ] Check... " 10 55 0
+}
+
+function Check_own()
+{
+	# /etc/profile 소유권 확인
+	profile_own=$(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+	# /etc/bashrc 소유권 확인
+	bashrc_own=$(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+	
+	if [ $profile_own == rootroot ] && [ $bashrc_own == rootroot ]
+	then 
+		isgoodsysown=true
+	else
+		isgoodsysown=false
+	fi
+
+	
+	for usrhome in "${Homedir[@]}";
+	do
+		# 홈 디렉터리 .bash_profile 소유권 확인
+		usr_profile_own=$(ls -al /home/$usrhome/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		# 홈 디렉터리 .bashrc  소유권 확인
+		usr_bashrc_own=$(ls -al /home/$usrhome/.bashrc | awk -F " " '{print $3  $4}' | grep -v ^$)
+		
+		if [ $usr_profile_own == rootroot ] && [ $usr_bashrc_own == rootroot ]
+		then 
+			isgoodusrown=true
+		else
+			isgoodusrown=false
+		fi
+	done
+
+	if [ $isgoodsysown == true ] && [ $isgoodusrown == true ]
+	then
+		echo "   [New U-15|System Conf file - Ownership ] : SAFE\n" >> ./.SecurityInfo
+	else
+		echo "   [New U-15|System Conf file - Ownership ] : WARN\n" >> ./.SecurityInfo
+	fi
+	
+	echo " *suggest: /etc/profile : rootroot\n           /etc/bashrc : rootroot\n           /home/유저네임/.bashrc : rootroot\n           /home/유저네임/.bash_profile : rootroot\n" >> ./.SecurityInfo
+    echo " *current: /etc/profile : $profile_own\n           /etc/bashrc : $bashrc_own" >> ./.SecurityInfo
+	
+	for usr in "${Homedir[@]}";
+	do
+		# 홈 디렉터리 .bash_profile 소유권 확인
+		check_usr_profile_own=$(ls -al /home/$usr/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		# 홈 디렉터리 .bashrc  소유권 확인
+		check_usr_bashrc_own=$(ls -al /home/$usr/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		echo "\n           /home/$usr/.bashrc : $check_usr_bashrc_own" >> ./.SecurityInfo
+		echo "\n           /home/$usr/.bash_profile :$check_usr_profile_own" >> ./.SecurityInfo
+	done
+	echo "  \n\n" >> ./.SecurityInfo
+
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[New U-15|System Conf file - Permision ] Check... " 10 55 0
+}
+
+function Execute_permission() 
+{
+	for e in "${Homedir[@]}"; 
+	do
+		before_usr_bashrc+="/home/$e/.bashrc = $(stat -c %a /home/$e/.bashrc)\n                   "
+		before_usr_bash_profile+="/home/$e/.bash_profile = $(stat -c %a /home/$e/.bash_profile)\n                   "
+	done
+	
+	before_sys_bashrc=$(stat -c %a /etc/bashrc)
+	before_sys_profile=$(stat -c %a /etc/profile)
+	
+	if [ $(cat ./.SecurityInfo | grep -E "00.\[New U-15" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "00.[New U-15|System Conf file - Permision ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep -E "[New U-15" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup profile /etc/profile "File Backup :" #추가 백업 파일
+		filebackup bashrc /etc/bashrc "File Backup :" # 추가 백업 파일
+		for i in "${Homedir[@]}"; # 홈 디렉터리 백업
+		do
+			filebackup $i /home/$i "File Backup :" # 홈 디렉터리 백업
+		done
+		
+		chmod 644 /etc/bashrc
+		chmod 644 /etc/profile
+		
+		for exce_usrhome in "${Homedir[@]}";
+		do
+			chmod 644 /home/$ex_usrhome/.bashrc
+			chmod 644 /home/$ex_usrhome/.bash_profile
+		done
+		echo "00.[New U-15|System Conf file - Permision ] : Setting Sucess\n "
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc\n                   /etc/profile : $before_sys_profile\n                   $before_usr_bashrc\n                   $before_usr_bash_profile"
+	
+		echo -e "  - After  Value : /etc/bashrc : $(stat -c %a /etc/bashrc)\n                   /etc/profile : $(stat -c %a /etc/profile)"
+	
+		for after in "${Homedir[@]}";
+		do
+			echo -e "\n                   /home/$after/.bashrc : $(stat -c %a /home/$after/.bashrc)\n/                   home/$after/.bash_profile : $(stat -c %a /home/$after/.bash_profile)"
+		done
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc\n                   /etc/profile : $before_sys_profile\n                   $before_usr_bashrc$before_usr_bash_profile"
+		
+		echo -e "  - After  Value : /etc/bashrc : $(stat -c %a /etc/bashrc)\n                   /etc/profile : $(stat -c %a /etc/profile)"
+		
+		for after in "${Homedir[@]}";
+		do
+			echo -e "                   /home/$after/.bashrc : $(stat -c %a /home/$after/.bashrc)\n                   /home/$after/.bash_profile : $(stat -c %a /home/$after/.bash_profile)"
+		done
+	else
+		echo "00.[New U-15|System Conf file - Permision ] : Error\n"
+	fi
+
+}
+	
+function Execute_own()
+{
+	for i in "${Homedir[@]}";
+	do
+		before_usr_bashrc_own+="/home/$i/.bashrc = $(ls -al /home/$usrhome/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   "
+		before_usr_bash_profile_own+="/home/$i/.bash_profile = $(ls -al /home/$i/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   "
+	done
+	
+	before_sys_bashrc_own=$(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+	before_sys_profile_own=$(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+	
+	
+	if [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[New U-15" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "   [New U-15|System Conf file - Ownership ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[New U-15" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup profile /etc/profile "File Backup :" #추가 백업 파일
+		filebackup bashrc /etc/bashrc "File Backup :" # 추가 백업 파일
+		for i in "${Homedir[@]}"; # 홈 디렉터리 백업
+		do
+			filebackup $i /home/$i "File Backup :" # 홈 디렉터리 백업
+			before_usr_bashrc+="/home/$i/.bashrc = $(stat -c %a /home/$i/.bashrc)\n"
+			before_usr_bash_profile+="/home/$i/.bash_profile = $(stat -c %a /home/$i/.bash_profile)\n"
+		done
+		chown root:root /etc/bashrc
+		chown root:root /etc/profile
+		for exce_usrhome in "${Homedir[@]}";
+		do
+			chown root:root /home/$exce_usrhome/.bashrc
+			chown root:root /home/$exce_usrhome/.bash_profile
+		done
+		echo "   [New U-15|System Conf file - Ownership ] : Setting Sucess\n "
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc_own\n                   /etc/profile : $before_sys_profile_own\n                   $before_usr_bashrc_own$before_usr_bash_profile_own"
+		
+		echo -e "  - After  Value : /etc/bashrc : $(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   /etc/profile : $(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)"
+		
+		for after in "${Homedir[@]}";
+		do
+			echo -e "                   /home/$after/.bashrc : $(ls -al /home/$after/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   /home/$after/.bash_profile : $(ls -al /home/$after/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)"
+		done	
+	else
+		echo "   [New U-15|System Conf file - Ownership ] : Error\n"
+	fi
+
+
+}
+
+
+function U-15()
+{
+	Check_permission
+	Check_own
+}
+
+function U-15_execute()
+{
+	Execute_permission
+	Execute_own
+}
+
+###############################################################################################################
+
+# 기존 조치 항목들
+
+###############################################################################################################
+
+
 ################################################################################################################
 #### U-02 패스워드 복잡도
 # 변경 내역
@@ -558,7 +877,7 @@ function SessionTimeOut()
 function SessionTimeOutExcute()
 {
 	preValue=$(cat /etc/profile | grep TMOUT=)
-	if [ $(cat ./.SecurityInfo | grep "U-15" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	if [ $(cat ./.SecurityInfo | grep "08.\[U-15" | awk -F ": " '{print $2}') == "SAFE\n" ]
         then
 		echo "08.[U-15|Session TimeOut   ] : Already applied\n"
     	elif [ $(cat ./.SecurityInfo | grep "U-15" | awk -F ": " '{print $2}') == "WARN\n" ]
@@ -1311,7 +1630,8 @@ function filebackup()
 		echo "$3 Backup Exists    : $2 -> ./BACKUP/$1" >> $(pwd)/LOG/security/$logfilename.log
 	else
 		#\cp $2 /root/WinsCloud_Tool/1.Tool/BACKUP/$1
-		\cp $2 $(pwd)/BACKUP/$1
+		## \cp $2 $(pwd)/BACKUP/$1
+		\cp -r $2 $(pwd)/BACKUP/$1
 		#if [ -f /root/WinsCloud_Tool/1.Tool/BACKUP/$1 ]
 		if [ -e $(pwd)/BACKUP/$1 ]
 		then
@@ -1360,6 +1680,10 @@ function ServerInfo()
 
 function CheckSecurity()
 {
+	# 새로 만든 함수
+	U-05
+	U-15
+	# 기존 함수
 	PwdComplexity
 	AccountLockCritical
 	PwdMinLength
@@ -1413,6 +1737,13 @@ function CheckSecurity()
 function SettingSecurity()
 {
 	echo "[Backup Result] : $(pwd)/BACKUP/" >> $(pwd)/LOG/security/$logfilename.log
+	
+	# 추가 함수
+	echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-00|패스워드 파일 보호 ] Setting... " 10 55 0
+	U-05_execute >> ./.SecuritySet
+	echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-00|사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정] Setting... " 10 55 0
+	U-15_execute >> ./.SecuritySet
+	# 기존 함수
 	echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-02|Passwd Complexity ] Setting... " 10 55 0
 	PwdComplexityExcute >> ./.SecuritySet
 	echo  8 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-03|Account Lock-1    ] Setting... " 10 55 0
@@ -1614,6 +1945,7 @@ function menu()
 		echo "  # Exit the Cloud Security Setting                                        " >> $(pwd)/LOG/security/$logfilename.log
 		echo "******************************************************************************" >> $(pwd)/LOG/security/$logfilename.log
 		echo ""
+				clear
             	exit
             	;;
         255)
