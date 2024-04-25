@@ -8,9 +8,6 @@
 
 ################################################
 
-# 기존 스크립트에서 rocky OS 관련 함수만 따로 분리한 버전
-# Core 함수는 main.sh로 분리
-
 #Start of Shell Scripts
 
 ###############################################################################################################
@@ -51,6 +48,130 @@ function DialogSetup()	#	DIalog 패키지 설치 함수 / Rocky Linux는 다른 
 	fi
 }
 
+
+
+
+###############################################################################################################
+
+# 2021/03/31 KISA 취약점 조치 항목 (총 72개)
+## 조치 코드 목록
+### 1. 계정관리 (15개)
+#### U-1	- 조치 / menu 항목 따로 빠짐
+#### U-2	- 조치
+#### U-3	- 조치
+#### U-4	- 조치
+#### U-44
+#### U-45	- 조치 / menu 항목 따로 빠짐
+#### U-46	- 조치
+#### U-47	- 조치
+#### U-48	- 조치
+#### U-49	- 조치
+#### U-50
+#### U-51	- 조치
+#### U-52
+#### U-53
+#### U-54	- 조치
+#
+### 2. 파일 및 디렉터리 관리 (19개)
+#### U-05
+#### U-06
+#### U-07
+#### U-08
+#### U-09	- 조치
+#### U-10	- 조치
+#### U-11
+#### U-12
+#### U-13
+#### U-14	- 조치
+#### U-15
+#### U-16
+#### U-17
+#### U-18
+#### U-55
+#### U-56
+#### U-57
+#### U-58
+#### U-59
+#
+### 3. 서비스 관리 (35개)
+#### U-19
+#### U-20	- 조치
+#### U-21
+#### U-22	- 조치
+#### U-23
+#### U-24
+#### U-25
+#### U-26
+#### U-27
+#### U-28
+#### U-29
+#### U-30
+#### U-31
+#### U-32
+#### U-33
+#### U-34
+#### U-35
+#### U-36
+#### U-37
+#### U-38
+#### U-39
+#### U-40
+#### U-41
+#### U-60
+#### U-61
+#### U-62
+#### U-63
+#### U-64
+#### U-65	- 조치
+#### U-66
+#### U-67
+#### U-68	- 조치
+#### U-69	- 조치
+#### U-70
+#### U-71
+#
+### 4. 패치 관리 (1개)
+#### U-42
+#
+### 5. 로그 관리 (2개)
+#### U-43
+#### U-72	- 조치
+#
+### 6. 추가 조치 항목 (3개)
+#### ASU-01	- 조치
+#### ASU-02	- 조치
+#### ASU-03	- 조치
+###############################################################################################################
+
+###########################################################
+
+# 1. 계정 관리
+
+###########################################################
+
+# U-01
+function SshRootLimit()
+{
+	if [ "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" = "PermitRootLogin no" ]
+	then
+        #안전
+		dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-01|SSH Root Limit] Already applied.\n  $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" 15 55
+		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+		echo "# [OK][U-01|SSH Root Limit] Already applied. - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
+		echo "" >> $(pwd)/LOG/security/$logfilename.log
+	else
+		#위험
+		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
+		filebackup sshd_config /etc/ssh/sshd_config "# [U-01|SSH Root Limit] :"
+		line=$(egrep -n "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no" /etc/ssh/sshd_config | awk -F ":" '{print$1}')"s"
+		sed -i "$line/.*/PermitRootLogin no/g" /etc/ssh/sshd_config
+		setResult=$(CompareValue "[U-01|SSH Root Limit]" "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" "PermitRootLogin no")
+		echo "# $setResult - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
+		SshRestart
+	fi
+	menu
+}
+
 # U-01 SshRootLimit 참조 함수
 function SshRestart()	#	SSH 데몬 재시작 함수
 {
@@ -74,15 +195,215 @@ function SshRestart()	#	SSH 데몬 재시작 함수
 }
 
 
+# U-02 패스워드 복잡도
+# 변경 내역
+## system-auth 파일 항목 중 수정 항목 변경
+## RHEL8 이후 pam_cracklib.so -> pam_pwquality.so로 변경/ 기존 "pam_cracklib.so" RHEL8 부터 지원 안함
 
-###############################################################################################################
+function PwdComplexity()	# 패스워드 복잡도 점검 함수 / RHEL 8 버전부터 점검 방법 변경
+{
+	minlen=$(cat /etc/pam.d/system-auth | grep minlen | awk -F "minlen=" '{print $2}'| awk -F " " '{print $1}')
+	dcredit=$(cat /etc/pam.d/system-auth | grep dcredit | awk -F "dcredit=" '{print $2}'| awk -F " " '{print $1}')
+	ucredit=$(cat /etc/pam.d/system-auth | grep ucredit | awk -F "ucredit=" '{print $2}'| awk -F " " '{print $1}')
+	lcredit=$(cat /etc/pam.d/system-auth | grep lcredit | awk -F "lcredit=" '{print $2}'| awk -F " " '{print $1}')
+	ocredit=$(cat /etc/pam.d/system-auth | grep ocredit | awk -F "ocredit=" '{print $2}'| awk -F " " '{print $1}')
+	#
+	#
+	cmp1="$minlen$dcredit$ucredit$lcredit$ocredit"
+	cmp2="9-1-1-1-1"
+	if [ -z "$cmp1" ]
+	then
+		#위험
+        	echo "01.[U-02|Passwd Complexity ] : WARN\n" >> ./.SecurityInfo
+	elif [ "$cmp1" != "$cmp2" ]
+	then
+		#위험
+        	echo "01.[U-02|Passwd Complexity ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "01.[U-02|Passwd Complexity ] : SAFE\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-02|Passwd Complexity ] Check... " 10 55 0
+}
 
-# 2021 클라우드 취약점 조치 항목 추가
+function PwdComplexity_check() # 비밀번호 복잡성 현재 설정 확인 함수
+{
+	setminlen="minlen=9"
+	setdcredit="dcredit=-1"
+	setucredit="ucredit=-1"
+	setlcredit="lcredit=-1"
+	setocredit="ocredit=-1"
 
-###############################################################################################################
+        # RHEL8 이후 pam_cracklib.so -> pam_pwquality.so로 변경/ 기존 "pam_cracklib.so" RHEL8 부터 지원 안함
+        checkvalue=$(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_pwquality.so" |grep $1)	
+	if [ -n $1 ]
+	then
+		retval="true"
+	else
+		retval="false"
+	fi
+}
 
-# 구 U-05 패스워드 파일 보호
-# U-04
+function PwdComplexityExcute_check() # 비밀번호 복잡성 설정하기 위한 확인 함수
+{	
+	# RHEL8 이후 pam_cracklib.so -> pam_pwquality.so로 변경/ 기존 "pam_cracklib.so" RHEL8 부터 지원 안함
+	preValue=$(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_pwquality.so")
+	PwdComplexity_check minlen
+	PwdComplexity_check dcredit
+	PwdComplexity_check ucredit
+	PwdComplexity_check lcredit
+	PwdComplexity_check ocredit
+}
+
+function PwdComplexityExcute() # 비밀번호 복잡성 설정 함수
+{
+	
+	minlen=$(cat /etc/pam.d/system-auth | grep minlen | awk -F "minlen=" '{print $2}'| awk -F " " '{print $1}')
+	dcredit=$(cat /etc/pam.d/system-auth | grep dcredit | awk -F "dcredit=" '{print $2}'| awk -F " " '{print $1}')
+	ucredit=$(cat /etc/pam.d/system-auth | grep ucredit | awk -F "ucredit=" '{print $2}'| awk -F " " '{print $1}')
+	lcredit=$(cat /etc/pam.d/system-auth | grep lcredit | awk -F "lcredit=" '{print $2}'| awk -F " " '{print $1}')
+	ocredit=$(cat /etc/pam.d/system-auth | grep ocredit | awk -F "ocredit=" '{print $2}'| awk -F " " '{print $1}')
+
+	# RHEL8 이후 pam_cracklib.so -> pam_pwquality.so로 변경/ 기존 "pam_cracklib.so" RHEL8 부터 지원 안함
+	preValue=$(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_pwquality.so")
+	setValue="password    requisite     pam_pwquality.so try_first_pass retry=3 minlen=9 dcredit=-1 ucredit=-1 lcredit=-1 ocredit=-1 type="
+
+
+	if [ $(cat ./.SecurityInfo | grep "U-02" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "01.[U-02|Passwd Complexity ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-02" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup system-auth /etc/pam.d/system-auth "01.[U-02|Passwd Complexity ] :"
+		# RHEL8 이후 pam_cracklib.so -> pam_pwquality.so로 변경/ 기존 "pam_cracklib.so" RHEL8 부터 지원 안함
+		##sed -i'' -r -e "/password    requisite     pam_pwquality.so/a\password    required      pam_pwquality.so retry=3 minlen=9 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		##sed -i'' -r -e "/password    requisite                                    pam_pwquality.so/a\password    requisite                                    pam_pwquality.so try_first_pass local_users_only enforce_for_root retry=3 authtok_type= minlen=9 dcredit=-1 ucredit=-1 lcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		sed -i'' -r -e "/password    requisite                                    pam_pwquality.so local_users_only/a\password    requisite                                    pam_pwquality.so try_first_pass local_users_only enforce_for_root retry=3 authtok_type= minlen=9 dcredit=-1 ucredit=-1 lcredit=-1 ocredit=-1" /etc/pam.d/system-auth
+		minlen=$(cat /etc/pam.d/system-auth | grep minlen | awk -F "minlen=" '{print $2}'| awk -F " " '{print $1}')
+		dcredit=$(cat /etc/pam.d/system-auth | grep dcredit | awk -F "dcredit=" '{print $2}'| awk -F " " '{print $1}')
+		ucredit=$(cat /etc/pam.d/system-auth | grep ucredit | awk -F "ucredit=" '{print $2}'| awk -F " " '{print $1}')
+		lcredit=$(cat /etc/pam.d/system-auth | grep lcredit | awk -F "lcredit=" '{print $2}'| awk -F " " '{print $1}')
+		ocredit=$(cat /etc/pam.d/system-auth | grep ocredit | awk -F "ocredit=" '{print $2}'| awk -F " " '{print $1}')
+		CompareValue "01.[U-02|Passwd Complexity ] :" "9-1-1-1-1" "$minlen$dcredit$ucredit$lcredit$ocredit"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/pam.d/system-auth | grep password | grep requisite | grep -E "pam_pwquality.so")"		
+    	else
+		echo "01.[U-02|Passwd Complexity ] : Error\n"
+    	fi
+}
+
+
+
+# U-03 계정 잠금 임계값 설정 함수
+# 변경 내역 
+## system-auth 파일 항목 중 수정 항목 변경
+## RHEL8 이후 pam_tally2.so-> pam_faillock.so로 변경/ 기존 "pam_tally2.so" 지원 안함
+
+function AccountLockCritical()
+{
+        # RHEL8 부터 "pam_tally2.so" 지원 안함/ pam_tally2.so-> pam_faillock.so
+	## cmp1=$(egrep -n "auth" /etc/pam.d/system-auth | egrep "required" | egrep "pam_tally2.so|deny=5|unlock_time=120|no_magic_root")
+	## cmp2=$(egrep -n "account" /etc/pam.d/system-auth | egrep "required" | egrep "/lib64/security/pam_tally2.so no_magic_root reset")
+        cmp1=$(egrep -n "auth" /etc/pam.d/system-auth | egrep "required" | egrep "pam_faillock.so|deny=5|unlock_time=120|no_magic_root")
+        cmp2=$(egrep -n "account" /etc/pam.d/system-auth | egrep "required" | egrep "/lib64/security/pam_faillock.so no_magic_root reset")
+	
+	if [ -z "$cmp1" ]
+	then
+		#위험
+        	echo "02.[U-03|Account Lock-1    ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "02.[U-03|Account Lock-1    ] : SAFE\n" >> ./.SecurityInfo
+        fi
+	##echo " *suggest: auth        required      	/lib64/security/pam_tally2.so deny=5 unlock_time=120 no_magic_root\n" >> ./.SecurityInfo
+	echo " *suggest: auth        required      	/lib64/security/pam_faillock.so deny=5 unlock_time=120 no_magic_root\n" >> ./.SecurityInfo
+	##echo " *current: ${cmp1}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+    	Progress=16
+
+	if [ -z "$cmp2" ]
+	then
+		#위험
+        	echo "   [U-03|Account Lock-2    ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "   [U-03|Account Lock-2    ] : SAFE\n" >> ./.SecurityInfo
+    	fi
+	#echo " *suggest: account     required      	/lib64/security/pam_tally2.so no_magic_root reset\n" >> ./.SecurityInfo
+	echo " *suggest: account     required     	/lib64/security/pam_faillock.so no_magic_root reset\n" >> ./.SecurityInfo
+	echo " *current: ${cmp2}\n\n" >> ./.SecurityInfo
+    	Progress=11
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-03|Account Lock-2    ] Check... " 10 55 0
+}
+
+function AccountLockCriticalExcute()
+{
+	preValue=$(cat /etc/pam.d/system-auth | grep auth | grep required | grep pam_deny.so)
+	if [ $(cat ./.SecurityInfo | grep -E "02.\[U-03" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup system-auth /etc/pam.d/system-auth "02.[U-03|Account Lock-1    ] :"
+
+		line=$(egrep -n "auth" /etc/pam.d/system-auth | egrep required | egrep pam_deny.so | grep -v '#' | awk -F ":" '{print$1}')"s"
+		if [ "$line" = "s" ]
+		then
+			echo "02.[U-03|Account Lock-1    ] : Error\n"
+		else
+			##sed -i "$line/.*/auth        required      \/lib64\/security\/pam_tally2.so deny=5 unlock_time=120 no_magic_root/g" /etc/pam.d/system-auth
+			##sed -i "$line/.*/auth        required      	\/lib64\/security\/pam_faillock.so deny=5 unlock_time=120 no_magic_root/g" /etc/pam.d/system-auth
+			sed -i "$line/.*/auth        required                                     \/lib64\/security\/pam_faillock.so deny=5 unlock_time=120 no_magic_root/g" /etc/pam.d/system-auth
+
+			if [ -n "$(cat /etc/pam.d/system-auth | grep auth | grep required | grep deny=5 | grep unlock_time=120 | grep no_magic_root)" ]
+		        then
+	                	echo "02.[U-03|Account Lock-1    ] : Setting Sucess\n "
+	        	else
+	                	echo "02.[U-03|Account Lock-1    ] : Setting Fail\n   "
+	        	fi	
+			echo "  - Before Value : $preValue"
+			echo "  - After  Value : $(cat /etc/pam.d/system-auth | grep auth | grep required | grep deny | grep "unlock_time")"
+		fi
+	elif [ $(cat ./.SecurityInfo | grep -E "02.\[U-03" | awk -F ": " '{print $2}') == "SAFE\n" ]
+		then
+		echo "02.[U-03|Account Lock-1    ] : Already applied\n"
+
+	else
+		echo "02.[U-03|Account Lock-1    ] : Error\n"
+	fi
+
+	preValue=$(cat /etc/pam.d/system-auth | grep account | grep required | grep pam_permit.so)
+	if [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[U-03" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup system-auth /etc/pam.d/system-auth "   [U-03|Account Lock-2    ] :"
+
+		line=$(egrep -n "account" /etc/pam.d/system-auth | egrep "required" | egrep "pam_permit.so" | grep -v '#' | awk -F ":" '{print$1}')"s"
+		if [ "$line" = "s" ]
+		then
+			echo "   [U-03|Account Lock-2    ] : Error\n"
+		else
+			##sed -i "$line/.*/account     required      \/lib64\/security\/pam_tally2.so no_magic_root reset/g" /etc/pam.d/system-auth
+			sed -i "$line/.*/account     required                                     \/lib64\/security\/pam_faillock.so no_magic_root reset/g" /etc/pam.d/system-auth
+
+			if [ -n "$(cat /etc/pam.d/system-auth | grep account | grep required | grep no_magic_root | grep reset)" ]
+		        then
+	                	echo "   [U-03|Account Lock-2    ] : Setting Sucess\n "
+	        	else
+	                	echo "   [U-03|Account Lock-2    ] : Setting Fail\n   "
+	        	fi
+				echo "  - Before Value : $preValue"
+				echo "  - After  Value : $(cat /etc/pam.d/system-auth | grep account | grep required | grep no_magic_root | grep reset)"
+		fi
+	elif [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[U-03" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "   [U-03|Account Lock-2    ] : Already applied\n"
+	else
+		echo "   [U-03|Account Lock-2    ] : Error\n"
+	fi
+}
+
+
+# U-04 # 테스트 필요
 function U-04()
 {
 	## echo -e " U-05. 패스워드 파일 보호" >> $(pwd)/LOG/security/$logfilename.log
@@ -151,10 +472,570 @@ function U-04_execute()
     fi
 }
 
+############## 동작 확인 완료
+
+# U-45
+function wheelgroup()
+{
+	ret=0
+	if [ -z "$(cat /etc/group | grep wheel | grep ",$1,")" ]
+	then
+	    if [ "$1" = "$(cat /etc/group | grep wheel | awk -F "," '{print $NF}')" ]
+	    then
+	    	ret=1
+    	    else
+	       	ret=2
+	    fi
+	else
+	    ret=2
+	fi
+}
+
+function SuRootLimit_config()
+{
+	cmp1=$(cat /etc/pam.d/su | grep auth | grep required | awk -F " " '{print $1" "$2" "$3" "$4" "$5}')
+	cmp2="auth required pam_wheel.so debug group=wheel"
+
+	if [ -z "$cmp1" -o "$cmp1" != "$cmp2" ]
+	then
+		#위험
+        	echo "10.[U-67|Warning Messages  ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "10.[U-67|Warning Messages  ] : SAFE\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=51
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-67|Warning Messages  ] Check... " 10 55 0
+	sleep 1
+}
+
+function SuRootLimit()
+{
+    	userid=$(dialog --backtitle "$BACKTITLE" --title "$TITLE" --inputbox "Enter User ID (Include for Wheel Group)" 10 55  3>&1 1>&2 2>&3 3>&-)
+    	case $? in
+        	0)
+			if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
+			then
+				useradd "$userid"
+				passwd "$userid"
+				if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
+				then
+					echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo " # '$userid' creation failed." >> $(pwd)/LOG/security/$logfilename.log			
+				else
+					echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo " # '$userid' creation success." >> $(pwd)/LOG/security/$logfilename.log
+				fi
+			else
+				useradd "$userid"
+				echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
+				echo " # '$userid' Already exists." >> $(pwd)/LOG/security/$logfilename.log				
+				sleep 1
+			fi
+
+			wheelgroup $userid
+			if [ $ret -eq 1 ]
+			then
+				dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Already applied.\n  '$userid' Already included in wheel group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+				echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+				echo "# [OK][U-06|SU - Root Limit] Already applied." >> $(pwd)/LOG/security/$logfilename.log
+				echo "# '$userid' Already included in wheel group." >> $(pwd)/LOG/security/$logfilename.log
+				echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+				echo " " >> $(pwd)/LOG/security/$logfilename.log
+			elif [ $ret -eq 2 ]
+			then
+				chgrp wheel /bin/su
+				usermod -G wheel root
+				usermod -G wheel $userid
+				chmod 4750 /bin/su
+				wheelgroup $userid
+				if [ $ret -eq 1 ]
+				then
+					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Setting Success.\n  '$userid' was successfully created.\n  '$userid' included in the 'wheel' group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [OK][U-06|SU - Root Limit] Setting Success." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# '$userid' was successfully created. '$userid' included in the 'wheel' group." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [wheel group List] $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+					echo " " >> $(pwd)/LOG/security/$logfilename.log
+				else
+					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Setting Fail.\n  '$userid' has failed to create.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [ERROR][U-06|SU - Root Limit] Setting Fail." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# '$userid' has failed to create." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+					echo " " >> $(pwd)/LOG/security/$logfilename.log
+					menu
+				fi
+			else
+				dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Check Fail. (return $ret)\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+				echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+				echo "# [ERROR][U-06|SU - Root Limit] Check Fail. (return $ret)" >> $(pwd)/LOG/security/$logfilename.log
+				echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+				echo " " >> $(pwd)/LOG/security/$logfilename.log
+						
+			fi	
+			menu		
+            		;;
+        	1)
+			menu
+			;;
+        	255)
+            		return 255
+            		;;
+    	esac
+}
+
+# U-46
+function PwdMinLength()
+{
+	cmp1=$(cat /etc/login.defs | grep PASS_MIN_LEN | grep -v '#' | awk -F " " '{print $2}')
+	if [ $cmp1 -ge 8 ]
+	then
+        	#안전
+        	echo "03.[U-07|Passwd Min Len    ] : SAFE\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "03.[U-07|Passwd Min Len    ] : WARN\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: 9\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=14
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-07|Passwd Min Len    ] Check... " 10 55 0
+}
+
+function PwdMinLengthExcute()
+{
+	preValue=$(cat /etc/login.defs | grep PASS_MIN_LEN | grep -v '#')
+	if [ $(cat ./.SecurityInfo | grep "U-07" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "03.[U-07|Passwd Min Len    ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-07" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+		filebackup login.defs /etc/login.defs "03.[U-07|Passwd Min Len    ] :"
+		line=$(grep -n PASS_MIN_LEN /etc/login.defs | grep -v '#' | awk -F ":" '{print$1}')"s"
+		sed -i "$line/.*/PASS_MIN_LEN    9/g" /etc/login.defs
+		CompareValue "03.[U-07|Passwd Min Len    ] :" "$(cat /etc/login.defs | grep PASS_MIN_LEN | grep -v '#' | awk -F " " '{print $2}')" "9"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/login.defs | grep PASS_MIN_LEN | grep -v '#')"
+	else
+		echo "03.[U-07|Passwd Min Len    ] : Error\n"
+	fi
+}
 
 
-# 구 U-15 사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정
-# U-14
+# U-47 패스워드 만료기간 확인 함수
+function PwdMaxDays()
+{
+	cmp1=$(cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v '#' | awk -F " " '{print $2}')
+	if [ $cmp1 -le 90 ]
+	then
+        	#안전
+        	echo "04.[U-08|Passwd Max Days   ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "04.[U-08|Passwd Max Days   ] : WARN\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: 90\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=18
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-08|Passwd MaxDays    ] Check... " 10 55 0
+	#sleep 1
+}
+
+function PwdMaxDaysExcute()
+{
+	preValue=$(cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v '#')
+	if [ $(cat ./.SecurityInfo | grep "U-08" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "04.[U-08|Passwd Max Days   ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-08" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+		filebackup login.defs /etc/login.defs "04.[U-08|Passwd Max Days   ] :"
+		line=$(grep -n PASS_MAX_DAYS /etc/login.defs | grep -v '#' | awk -F ":" '{print$1}')"s"
+		sed -i "$line/.*/PASS_MAX_DAYS   90/g" /etc/login.defs 
+		CompareValue "04.[U-08|Passwd Max Days   ] :" "$(cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v '#' | awk -F " " '{print $2}')" "90"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/login.defs | grep PASS_MAX_DAYS | grep -v '#')"
+	else
+		echo "04.[U-08|Passwd Max Days   ] : Error\n"
+	fi
+	sleep 1
+}
+
+
+# U-48 패스워드 최소 사용기간 확인 함수
+function PwdMinDays()
+{
+	cmp1=$(cat /etc/login.defs | grep PASS_MIN_DAYS | grep -v '#' | awk -F " " '{print $2}')
+	if [ $cmp1 -ne 0 ]
+	then
+        	#안전
+        	echo "05.[U-09|Passwd Min Days   ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "05.[U-09|Passwd Min Days   ] : WARN\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: 0\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=23
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-09|Passwd Min Days   ] Check... " 10 55 0
+	sleep 1
+}
+
+function PwdMinDaysExcute()
+{
+	preValue=$(cat /etc/login.defs | grep PASS_MIN_DAYS | grep -v '#')
+	if [ $(cat ./.SecurityInfo | grep "U-09" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+        	echo "05.[U-09|Passwd Min Days   ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-09" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup login.defs /etc/login.defs "05.[U-09|Passwd Min Days   ] :"
+		line=$(grep -n PASS_MIN_DAYS /etc/login.defs | grep -v '#' | awk -F ":" '{print$1}')"s"
+		sed -i "$line/.*/PASS_MIN_DAYS   1/g" /etc/login.defs
+		CompareValue "05.[U-09|Passwd Min Days   ] :" "$(cat /etc/login.defs | grep PASS_MIN_DAYS | grep -v '#' | awk -F " " '{print $2}')" "1"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/login.defs | grep PASS_MIN_DAYS | grep -v '#')"
+	else
+		echo "05.[U-09|Passwd Min Days   ] : Error\n"		
+	fi
+	sleep 1
+}
+
+
+# U-49
+function UserDel()
+{
+	cmp1=$(cat /etc/passwd | awk -F ":" '{print$1}' | egrep "adm|lp|sync|shutdown|halt|news|uucp|operator|games|gopher|nfsnobody|squid")
+	if [ -z "$cmp1" ]
+	then
+        	#안전
+        	echo "06.[U-10|User Delete       ] : SAFE\n" >> ./.SecurityInfo
+    	else
+		#위험
+        	echo "06.[U-10|User Delete       ] : WARN\n" >> ./.SecurityInfo
+    	fi	
+	echo " *suggest: -\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+    	Progress=28
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-10|User Delete       ] Check... " 10 55 0
+	#sleep 1
+}
+
+function UserDelExecute()
+{
+	preValue=$(cat /etc/passwd | awk -F ":" '{print$1}' | egrep "adm|lp|sync|shutdown|halt|news|uucp|operator|games|gopher|nfsnobody|squid")
+	if [ $(cat ./.SecurityInfo | grep "U-10" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+        	echo "06.[U-10|User Delete       ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-10" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+		filebackup passwd /etc/passwd "06.[U-10|User Delete       ] :"
+		userdel adm >& /dev/null
+		userdel lp >& /dev/null
+		userdel sync >& /dev/null
+		userdel shutdown >& /dev/null
+		userdel halt >& /dev/null
+		userdel news >& /dev/null
+		userdel uucp >& /dev/null
+		userdel operator >& /dev/null
+		userdel games >& /dev/null
+		userdel gopher >& /dev/null
+		userdel nfsnobody >& /dev/null
+		userdel squid >& /dev/null
+		CompareValue "06.[U-10|User Delete       ] :" "$(cat /etc/passwd | awk -F ":" '{print$1}' | egrep "adm|lp|sync|shutdown|halt|news|uucp|operator|games|gopher|nfsnobody|squid")" ""
+		echo "  - Before Value : $preValue"
+		setValue=$(cat /etc/passwd | awk -F ":" '{print$1}' | egrep "adm|lp|sync|shutdown|halt|news|uucp|operator|games|gopher|nfsnobody|squid")
+		if [ -z $(cat /etc/passwd | awk -F ":" '{print$1}' | egrep "adm|lp|sync|shutdown|halt|news|uucp|operator|games|gopher|nfsnobody|squid") ]
+		then
+			setValue="-"
+		fi
+		echo "  - After  Value : $setValue"
+	else
+		echo "7 .[U-10|User Delete       ] : Error\n"
+    	fi	
+	sleep 1
+}
+
+
+# U-51 
+function GroupDel()
+{
+	cmp1=$(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev")
+	if [ -z "$cmp1" ]
+	then
+        	#안전
+        	echo "07.[U-12|Group Delete      ] : SAFE\n" >> ./.SecurityInfo
+    	else
+		#위험
+        	echo "07.[U-12|Group Delete      ] : WARN\n" >> ./.SecurityInfo
+    	fi
+	echo " *suggest: -\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+    	Progress=32
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-12|Group Delete      ] Check... " 10 55 0
+	sleep 1
+}
+
+function GroupDelExecute()
+{
+	preValue=$(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev")
+	if [ $(cat ./.SecurityInfo | grep "U-12" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+        	echo "07.[U-12|Group Delete      ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-12" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+		filebackup group /etc/group "07.[U-12|Group Delete      ] :"
+		groupdel lp >& /dev/null
+		groupdel uucp >& /dev/null
+		groupdel games >& /dev/null
+		groupdel tape >& /dev/null
+		groupdel video >& /dev/null
+		groupdel audio >& /dev/null
+		groupdel floppy >& /dev/null
+		groupdel cdrom >& /dev/null
+		groupdel man >& /dev/null
+		groupdel slocate >& /dev/null
+		groupdel stapusr >& /dev/null
+		groupdel stapsys >& /dev/null
+		groupdel stapdev >& /dev/nullss
+		usermod postfix -G mail,postfix,postdrop
+		#useradd tmsplus -s /sbin/nologin -G sys,tty,disk,mem,kmem,dialout,lock,utmp,utempter,ssh_keys,input,systemd-journal
+		CompareValue "07.[U-12|Group Delete      ] :" "$(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev")" ""
+		echo "  - Before Value : $preValue"
+		setValue=$(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev")
+		if [ -z $(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev") ]
+		then
+			setValue="-"
+		fi
+		echo "  - After  Value : $(cat /etc/group | awk -F ":" '{print$1}' | egrep "lp|uucp|games|tape|video|audio|floppy|cdrom|man|slocate|stapusr|stapsys|stapdev")"
+	else
+		echo "07.[U-12|Group Delete      ] : Error\n"
+	fi
+}
+
+# U-54
+function SessionTimeOut()
+{
+	cmp1=$(cat /etc/profile | grep TMOUT=)
+	if [ -n "$cmp1" ]
+        then
+        	cmp1=$(cat /etc/profile | grep TMOUT | awk -F "=" '{print $2}')
+        	if [ "$cmp1" -le 300 ]
+        	then
+        		#안전
+        		echo "08.[U-15|Session TimeOut   ] : SAFE\n" >> ./.SecurityInfo
+        	else
+        		#위험
+        		echo "08.[U-15|Session TimeOut   ] : WARN\n" >> ./.SecurityInfo
+        	fi
+	else
+		#위험
+        	echo "08.[U-15|Session TimeOut   ] : WARN\n" >> ./.SecurityInfo
+        	echo "Value not exist"
+        	echo ""
+	fi
+	echo " *suggest: TMOUT=300 Under value\n" >> ./.SecurityInfo
+	echo " *current: $(cat /etc/profile | grep TMOUT=)\n\n" >> ./.SecurityInfo
+	Progress=38
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-15|Session TimeOut   ] Check... " 10 55 0
+}
+
+function SessionTimeOutExcute()
+{
+	preValue=$(cat /etc/profile | grep TMOUT=)
+	if [ $(cat ./.SecurityInfo | grep "08.\[U-15" | awk -F ": " '{print $2}') == "SAFE\n" ]
+        then
+		echo "08.[U-15|Session TimeOut   ] : Already applied\n"
+    	elif [ $(cat ./.SecurityInfo | grep "U-15" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup profile /etc/profile "08.[U-15|Session TimeOut   ] :"
+
+		echo >> /etc/profile
+		echo TMOUT=300 >> /etc/profile
+		echo export TMOUT >> /etc/profile
+		#fi
+		CompareValue "08.[U-15|Session TimeOut   ] :" "$(cat /etc/profile | grep TMOUT | awk -F "=" '{print $1}' | sed -n 1p)" "TMOUT"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/profile | grep TMOUT=)"
+	else
+		echo "08.[U-15|Session TimeOut   ] : Error\n"
+	fi
+	sleep 1
+}
+
+
+###########################################################
+
+# 2. 파일 및 디렉터리 관리
+
+###########################################################
+
+# U-08 /etc/shadow 파일 권한 확인 함수
+function ShadowPermission()
+{
+	cmp1=$(ls -l /etc/shadow | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	cmp2="-r--------"
+	
+	if [ "$cmp1" = "$cmp2" ]
+	then
+        	#안전
+        	echo "09.[U-08|shadowFile Permit  ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "09.[U-08|shadowFile Permit  ] : WARN\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=54
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-08|shadowFile Permit  ] Check... " 10 55 0
+	sleep 1
+}
+
+# U-08 /etc/shadow 파일 권한 조치 함수
+function ShadowPermissionExcute()
+{	
+	preValue=$(ls -l /etc/shadow | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	if [ $(cat ./.SecurityInfo | grep "U-08" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "09.[U-08|shadowFile Permit  ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-08" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup shadow /etc/shadow "09.[U-08|shadowFile Permit  ] :"
+    		chmod 400 /etc/shadow
+		CompareValue "09.[U-08|shadowFile Permit  ] :" "$(ls -l /etc/shadow | awk -F " " '{print $1}' | awk -F "." '{print $1}')" "-r--------"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(ls -l /etc/shadow | awk -F " " '{print $1}' |awk -F "." '{print $1}')"
+	else
+		echo "09.[U-08|shadowFile Permit  ] : Error\n"
+	fi	
+}
+
+
+# U-09
+function HostsPermission()
+{
+	cmp1=$(ls -l /etc/hosts | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	cmp2="-rw-------"
+	
+	if [ "$cmp1" = "$cmp2" ]
+	then
+        	#안전
+        	echo "17.[U-20|hostsFile Permit  ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "17.[U-20|hostsFile Permit  ] : WARN\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=95
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-20|hostsFile Permit  ] Check... " 10 55 0
+	sleep 1
+}
+
+function HostsPermissionExcute()
+{	
+	preValue=$(ls -l /etc/hosts | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	if [ $(cat ./.SecurityInfo | grep "U-20" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "17.[U-20|hostsFile Permit  ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-20" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup hosts /etc/hosts "17.[U-20|hostsFile Permit  ] :"
+    		chmod 600 /etc/hosts
+		CompareValue "17.[U-20|hostsFile Permit  ] :" "$(ls -l /etc/hosts | awk -F " " '{print $1}' | awk -F "." '{print $1}')" "-rw-------"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(ls -l /etc/hosts | awk -F " " '{print $1}' |awk -F "." '{print $1}')"
+	else
+		echo "17.[U-20|hostsFile Permit  ] : Error\n"
+	fi	
+}
+
+
+# U-10
+function xinetdPermission()
+{
+	cmp1=$(ls -al /etc/xinetd.d/ | awk -F " " '{print $1}' | sed -n 2p)
+	cmp2="drw-------."
+	
+	if [ "$cmp1" = "$cmp2" ]
+	then
+        	#안전
+        	echo "13.[U-21|inetd.conf Permit ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "13.[U-21|inetd.conf Permit ] : WARN\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=74
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-21|inetd.conf Permit ] Check... " 10 55 0
+	sleep 1
+}
+
+function xinetdPermissionExcute()
+{	
+	preValue=$(ls -al /etc/xinetd.d/ | awk -F " " '{print $1}' | sed -n 2p)
+	if [ $(cat ./.SecurityInfo | grep "U-21" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "13.[U-21|inetd.conf Permit ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-21" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		chmod 600 -R /etc/xinetd.d/
+		CompareValue "13.[U-21|inetd.conf Permit ] :" "$(ls -al /etc/xinetd.d/ | awk -F " " '{print $1}' | sed -n 2p)" "drw-------."
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(ls -al /etc/xinetd.d/ | awk -F " " '{print $1}' | sed -n 2p)"
+	else
+		echo "13.[U-21|inetd.conf Permit ] : Error\n"
+	fi	
+}
+
+
+# U-11 /etc/rsyslog.conf 파일 권한 확인 함수
+function RsyslogPermission()
+{
+	cmp1=$(ls -l /etc/rsyslog.conf | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	cmp2="-rw-r-----"
+	
+	if [ "$cmp1" = "$cmp2" ]
+	then
+        	#안전
+        	echo "12.[U-11|rsyslog.conf Permit  ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "12.[U-11|rsyslog.conf Permit  ] : WARN\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=67
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-11|rsyslog.conf Permit  ] Check... " 10 55 0
+	sleep 1
+}
+
+# U-11 /etc/rsyslog.conf 파일 권한 조치 함수
+function RsyslogPermissionExcute()
+{	
+	#preValue=$(ls -l 12.[U-11|rsyslog.conf Permit  ] | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	preValue=$(ls -l ls -l /etc/rsyslog.conf ] | awk -F " " '{print $1}' |awk -F "." '{print $1}')
+	if [ $(cat ./.SecurityInfo | grep "U-11" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "12.[U-11|rsyslog.conf Permit  ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-11" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup rsyslog.conf /etc/rsyslog.conf "12.[U-11|rsyslog.conf Permit  ] :"
+    		chmod 640 /etc/rsyslog.conf
+		CompareValue "12.[U-11|rsyslog.conf Permit  ] :" "$(ls -l /etc/rsyslog.conf | awk -F " " '{print $1}' | awk -F "." '{print $1}')" "-rw-r-----"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(ls -l /etc/rsyslog.conf | awk -F " " '{print $1}' |awk -F "." '{print $1}')"
+	else
+		echo "12.[U-11|rsyslog.conf Permit  ] : Error\n"
+	fi	
+}
+
+
+# U-14 # 테스트 필요
 function Check_permission()
 {
 	if [ $(stat -c %a /etc/bashrc) == 644 ] || [ $(stat -c %a /etc/bashrc) == 640 ] || [ $(stat -c %a /etc/bashrc) == 660 ]
@@ -365,7 +1246,6 @@ function Execute_own()
 
 }
 
-
 function U-14()
 {
 	Homedir=(`ls /home`)
@@ -381,143 +1261,553 @@ function U-14_execute()
 }
 
 
-# 구 U-06
-# U-45
-function wheelgroup()
+# U-56 umask 설정 확인
+function Umask()
 {
-	ret=0
-	if [ -z "$(cat /etc/group | grep wheel | grep ",$1,")" ]
-	then
-	    if [ "$1" = "$(cat /etc/group | grep wheel | awk -F "," '{print $NF}')" ]
-	    then
-	    	ret=1
-    	    else
-	       	ret=2
-	    fi
+	cmp1=$(cat /etc/profile | grep "umask 022")
+	if [ -n "$cmp1" ]
+        then
+        	#cmp1=$(cat /etc/profile | grep "umask 022" | awk -F "=" '{print $2}')
+			cmp1=$(cat /etc/profile | grep "umask 022" | awk -F " " '{print $2}')
+        	# if [ "$cmp1" -le 300 ]
+			#if [ "$cmp1" -gt "022" ] # $cmp1 값이 022 보다 크면
+            if [ "$cmp1" -ge "022" ] # $cmp1 값이 022와 같거나 크면
+        	then
+        		#안전
+        		echo "13.[U-56|UMASK Setting  ] : SAFE\n" >> ./.SecurityInfo
+        	else
+        		#위험
+        		echo "13.[U-56|UMASK Setting  ] : WARN\n" >> ./.SecurityInfo
+        	fi
 	else
-	    ret=2
+		#위험
+        	echo "13.[U-56|UMASK Setting  ] : WARN\n" >> ./.SecurityInfo
+        	echo "Value not exist"
+        	echo ""
 	fi
+	echo " *suggest: umask 022 Upper value\n" >> ./.SecurityInfo
+	echo " *current: $(cat /etc/profile | grep "umask 022")\n\n" >> ./.SecurityInfo
+	Progress=72
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-56|UMASK Setting  ] Check... " 10 55 0
 }
 
-function SuRootLimit_config()
+#U-56 umask 설정 조치
+function UmaskExcute()
 {
-	cmp1=$(cat /etc/pam.d/su | grep auth | grep required | awk -F " " '{print $1" "$2" "$3" "$4" "$5}')
-	cmp2="auth required pam_wheel.so debug group=wheel"
+	preValue=$(cat /etc/profile | grep "umask 022")
+	if [ $(cat ./.SecurityInfo | grep "13.\[U-56" | awk -F ": " '{print $2}') == "SAFE\n" ]
+    then
+		echo "13.[U-56|UMASK Setting  ] : Already applied\n"
+    elif [ $(cat ./.SecurityInfo | grep "U-56" | awk -F ": " '{print $2}') == "WARN\n" ]
+    then
+    	filebackup profile /etc/profile "08.13.[U-56|UMASK Setting  ] :"
 
-	if [ -z "$cmp1" -o "$cmp1" != "$cmp2" ]
+		echo >> /etc/profile
+		echo umask 022 >> /etc/profile
+		echo export umask >> /etc/profile
+
+		#fi
+		CompareValue "13.[U-56|UMASK Setting  ] :" "$(cat /etc/profile | grep "umask 022" | awk -F "=" '{print $1}' | sed -n 1p)" "umask"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/profile | grep "umask 022")"
+	else
+		echo "13.[U-56|UMASK Setting  ] : Error\n"
+	fi
+	sleep 1
+}
+
+
+###########################################################
+
+# 3. 서비스 관리
+
+###########################################################
+
+# U-20
+function AnonymousFTP()
+{
+	cmp1=$(cat /etc/passwd | grep ftp)
+
+	if [[ -f /etc/vsftpd.conf ]] || [[ -f /etc/vsftpd/vsftpd.conf ]] || [[ -n $cmp1 ]] ;
+	then
+        	#안전
+        	echo "19.[U-25|AnonymousFTP Limit] : WARN\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "19.[U-25|AnonymousFTP Limit] : SAFE\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: Delete ftp User (/etc/passwd,/etc/shadow)\n" >> ./.SecurityInfo
+	##echo " *current: passwd) ${cmp1}\n" >> ./.SecurityInfo
+	echo " *current: passwd) ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=97
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-25|AnonymousFTP Limit] Check... " 10 55 0
+	sleep 1
+}
+
+function AnonymousFTPExcute()
+{	
+	preValue=$(cat /etc/passwd | grep ftp)
+	if [ $(cat ./.SecurityInfo | grep "U-25" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "19.[U-25|AnonymousFTP Limit] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-25" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup passwd /etc/passwd "19.[U-25|AnonymousFTP Limit] :"
+
+    		userdel ftp 
+
+		CompareValue "19.[U-25|AnonymousFTP Limit] :" "$(cat /etc/passwd | grep ftp)" ""
+		echo "  - Before Value : passwd) $preValue\n"
+
+		echo "  - After  Value : passwd) $cmp1\n"
+
+	else
+		echo "19.[U-25|AnonymousFTP Limit] : Error\n"
+	fi	
+}
+
+
+# U-22
+function CronPermission()
+{
+	cmp1=$(ls -l /etc/cron.deny | awk -F " " '{print $1}')
+	cmp2="-rw-r-----."
+	cmp3="-rw-------."
+	
+	if [ "$cmp1" = "$cmp2" -o "$cmp1" = "$cmp3" ]
+	then
+        	#안전
+        	echo "09.[U-39|CronFile Permit   ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "09.[U-39|CronFile Permit   ] : WARN\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2} or ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=44
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-39|CronFile Permit   ] Check... " 10 55 0
+	sleep 1
+}
+
+function CronPermissionExcute()
+{	
+	preValue=$(ls -l /etc/cron.deny | awk -F " " '{print $1}')
+	if [ $(cat ./.SecurityInfo | grep "U-39" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "09.[U-39|CronFile Permit   ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-39" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup cron.deny /etc/cron.deny "09.[U-39|CronFile Permit   ] :"
+    		chmod 640 /etc/cron.deny
+		CompareValue "09.[U-39|CronFile Permit   ] :" "$(ls -l /etc/cron.deny | awk -F " " '{print $1}')" "-rw-r-----."
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(ls -l /etc/cron.deny | awk -F " " '{print $1}')"
+	else
+		echo "09.[U-39|CronFile Permit   ] : Error\n"
+	fi	
+}
+
+
+# U-65
+function atPermission()
+{
+	cmp1=$(ls -l /etc/at.deny | awk -F " " '{print $1}' | awk -F "." '{print $1}')
+	cmp2=$(ls -l /etc/at.allow | awk -F " " '{print $1}' | awk -F "." '{print $1}')  
+
+	if [[ -f /etc/at.deny ]] && [[ "$cmp1" = "-rw-r-----" ]] && [[ -f /etc/at.allow ]] && [[ "$cmp2" = "-rw-r-----" ]];
+	then
+	    #안전
+	    echo "18.[U-64|at.* File Permit  ] : SAFE\n" >> ./.SecurityInfo
+	else
+		#위험
+        	echo "18.[U-64|at.* File Permit  ] : WARN\n" >> ./.SecurityInfo
+        	#at.deny 파일 위험 현황 체크(존재여부,권한)
+		if [ ! -f /etc/at.deny ]; then
+			cmp1="File not exist"
+		else
+			cmp1=$(ls -l /etc/at.deny | awk -F " " '{print $1}' | awk -F "." '{print $1}')
+        	fi
+        #at.allow 파일 위험 현황 체크(존재여부,권한)
+        	if [ ! -f /etc/at.allow ]; then
+			cmp2="File not exist"
+		else
+			cmp2=$(ls -l /etc/at.allow | awk -F " " '{print $1}' | awk -F "." '{print $1}')
+        	fi  
+	fi
+	echo " *suggest: at.deny(-rw-r-----),at.allow(-rw-r-----)\n" >> ./.SecurityInfo
+	echo " *current: at.deny(${cmp1}),at.allow(${cmp2})\n\n" >> ./.SecurityInfo
+	Progress=96
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-64|at.* File Permit  ] Check... " 10 55 0
+	sleep 1
+}
+
+function atPermissionExcute()
+{	
+	if [ $(cat ./.SecurityInfo | grep "U-64" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "18.[U-64|at.* File Permit  ] : Already applied\n"
+		#WARN일때 취약점 조치 수행(at.deny,at.allow 파일생성 및 640 권한 설정)
+	elif [ $(cat ./.SecurityInfo | grep "U-64" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		#at.deny 파일 없으면 생성하고 640 권한 설정
+    		if [ -f /etc/at.deny ]; then
+	    		filebackup at.deny /etc/at.deny "18.[U-64|at.* File Permit  ] :"
+			preValue1=$(ls -l /etc/at.deny | awk -F " " '{print $1}')
+		else
+			touch /etc/at.deny
+			preValue1="File not exist"
+	    	fi
+    		chmod 640 /etc/at.deny
+		cmp1=$(ls -l /etc/at.deny | awk -F " " '{print $1}' | awk -F "." '{print $1}')
+
+		#at.allow 파일 없으면 생성하고 640 권한 설정
+	    	if [ -f /etc/at.allow ]; then
+	    		filebackup at.allow /etc/at.allow "18.[U-64|at.* File Permit  ] :"
+    			prevalue2=$(ls -l /etc/at.allow | awk -F " " '{print $1}')
+	    	else
+			touch /etc/at.allow
+			prevalue2="File not exist"
+	    	fi
+    			chmod 640 /etc/at.allow
+			cmp2=$(ls -l /etc/at.allow | awk -F " " '{print $1}' | awk -F "." '{print $1}')   
+
+        	if [[ -f /etc/at.deny ]] && [[ "$cmp1" = "-rw-r-----" ]] && [[ -f /etc/at.allow ]] && [[ "$cmp2" = "-rw-r-----" ]];
+		then
+			CompareValue "18.[U-64|at.* File Permit  ] :" "1" "1"
+		else
+			CompareValue "18.[U-64|at.* File Permit  ] :" "1" "0"
+		fi
+		echo "  - Before Value : at.deny($preValue1),at.allow($preValue2)"
+		echo "  - After  Value : at.deny($cmp1),at.allow($cmp2)"
+	else
+		echo "18.[U-64|at.* File Permit  ] : Error\n"
+	fi	
+}
+
+
+# U-68
+function WarningMessage()
+{
+	cmp1=$(cat /etc/motd)
+	cmp2=$(cat /etc/issue.net)
+	cmp3=$(cat /etc/issue)
+	cmp4="Administrator Access Only"
+	cmp5=$'\S\nKernel \\r on an \m'
+
+	if [ -z "$cmp1" -o "$cmp1" = "$cmp5" ]
 	then
 		#위험
         	echo "10.[U-67|Warning Messages  ] : WARN\n" >> ./.SecurityInfo
+    	elif [ -z "$cmp2" -o "$cmp2" = "$cmp5" ]
+    	then
+		#위험
+        	echo "10.[U-67|Warning Messages  ] : WARN\n" >> ./.SecurityInfo
+    	elif [ -z "$cmp3" -o "$cmp3s" = "$cmp5" ]
+    	then
+		#위험
+        	echo "10.[U-67|Warning Messages  ] : WARN\n" >> ./.SecurityInfo
+	elif [ -n "$cmp1" ] && [ -n "$cmp2" ] && [ -n "$cmp3" ]
+	then
+        	#안전
+        	echo "10.[U-67|Warning Messages  ] : SAFE\n" >> ./.SecurityInfo
 	else
         	#안전
         	echo "10.[U-67|Warning Messages  ] : SAFE\n" >> ./.SecurityInfo
 	fi
-	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
-	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	echo " *suggest: Setting to Logon Message..\n" >> ./.SecurityInfo
+	echo " *current: \n  /etc/motd: \n ${cmp1}\n" >> ./.SecurityInfo
+	echo "  /etc/issue.net: \n ${cmp2}\n" >> ./.SecurityInfo
+	echo "  /etc/issue: \n ${cmp3}\n\n" >> ./.SecurityInfo
 	Progress=51
 	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-67|Warning Messages  ] Check... " 10 55 0
 	sleep 1
 }
 
-function SuRootLimit()
+function WarningMessageExcute_config()
 {
-    	userid=$(dialog --backtitle "$BACKTITLE" --title "$TITLE" --inputbox "Enter User ID (Include for Wheel Group)" 10 55  3>&1 1>&2 2>&3 3>&-)
-    	case $? in
-        	0)
-				if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
-				then
-					useradd "$userid"
-					passwd "$userid"
-					if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
-					then
-						echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-						echo " # '$userid' creation failed." >> $(pwd)/LOG/security/$logfilename.log			
-					else
-						echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-						echo " # '$userid' creation success." >> $(pwd)/LOG/security/$logfilename.log
-					fi
-				else
-					useradd "$userid"
-					echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
-					echo " # '$userid' Already exists." >> $(pwd)/LOG/security/$logfilename.log				
-					sleep 1
-				fi
-
-				wheelgroup $userid
-				if [ $ret -eq 1 ]
-				then
-					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Already applied.\n  '$userid' Already included in wheel group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
-					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-					echo "# [OK][U-06|SU - Root Limit] Already applied." >> $(pwd)/LOG/security/$logfilename.log
-					echo "# '$userid' Already included in wheel group." >> $(pwd)/LOG/security/$logfilename.log
-					echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
-					echo " " >> $(pwd)/LOG/security/$logfilename.log
-				elif [ $ret -eq 2 ]
-				then
-					chgrp wheel /bin/su
-					usermod -G wheel root
-					usermod -G wheel $userid
-					chmod 4750 /bin/su
-					wheelgroup $userid
-					if [ $ret -eq 1 ]
-					then
-						dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Setting Success.\n  '$userid' was successfully created.\n  '$userid' included in the 'wheel' group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
-						echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-						echo "# [OK][U-06|SU - Root Limit] Setting Success." >> $(pwd)/LOG/security/$logfilename.log
-						echo "# '$userid' was successfully created. '$userid' included in the 'wheel' group." >> $(pwd)/LOG/security/$logfilename.log
-						echo "# [wheel group List] $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
-						echo " " >> $(pwd)/LOG/security/$logfilename.log
-					else
-						dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Setting Fail.\n  '$userid' has failed to create.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
-						echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-						echo "# [ERROR][U-06|SU - Root Limit] Setting Fail." >> $(pwd)/LOG/security/$logfilename.log
-						echo "# '$userid' has failed to create." >> $(pwd)/LOG/security/$logfilename.log
-						echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
-						echo " " >> $(pwd)/LOG/security/$logfilename.log
-						menu
-					fi
-				else
-					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Check Fail. (return $ret)\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
-					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-					echo "# [ERROR][U-06|SU - Root Limit] Check Fail. (return $ret)" >> $(pwd)/LOG/security/$logfilename.log
-					echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
-					echo " " >> $(pwd)/LOG/security/$logfilename.log
-							
-				fi	
-				menu		
-            ;;
-        	1)
-				menu
-			;;
-        	255)
-            	return 255
-            ;;
-    	esac
-}
-
-
-# U-01
-function SshRootLimit()
-{
-	if [ "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" = "PermitRootLogin no" ]
+	preValue=$(cat $1)
+	if [ -z "$preValue" ]
 	then
-        #안전
-		dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-01|SSH Root Limit] Already applied.\n  $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" 15 55
-		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
-		echo "# [OK][U-01|SSH Root Limit] Already applied. - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
-		echo "" >> $(pwd)/LOG/security/$logfilename.log
-	else
-		#위험
-		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
-		filebackup sshd_config /etc/ssh/sshd_config "# [U-01|SSH Root Limit] :"
-		line=$(egrep -n "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no" /etc/ssh/sshd_config | awk -F ":" '{print$1}')"s"
-		sed -i "$line/.*/PermitRootLogin no/g" /etc/ssh/sshd_config
-		setResult=$(CompareValue "[U-01|SSH Root Limit]" "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" "PermitRootLogin no")
-		echo "# $setResult - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
-		SshRestart
-	fi
-	menu
+		preValue="-"
+	fi	
+
+	vi -c "%g/\S/d" -c ":wq" $1 >& /dev/null
+	vi -c "%g/Kernel/d" -c ":wq" $1 >& /dev/null
+	echo \#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\# >> $1
+	echo \ \ \ \ \ \ \ \ \ \ ASSURING YOUR NETWORK SECURITY >> $1
+	echo \ \ \ \ \ \ \ \ \ \ \ Administrator Access Only !! >> $1
+	echo \ Unauthrozied and illegal access is strictly prohibited. >> $1
+	echo \#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\# >> $1
+
+	echo "  - Before Value($1) : $preValue"
+	echo "  - After  Value($1) : $(cat $1)"
 }
+
+function WarningMessageExcute()
+{
+	if [ $(cat ./.SecurityInfo | grep "U-67" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup issue.net /etc/issue.net "10.[U-67|Warning Messages  ] :"
+		filebackup issue /etc/issue "10.[U-67|Warning Messages  ] :"
+		filebackup motd /etc/motd "10.[U-67|Warning Messages  ] :"
+
+		WarningMessageExcute_config /etc/issue.net
+		WarningMessageExcute_config /etc/issue
+		WarningMessageExcute_config /etc/motd
+
+		CompareValue "10.[U-67|Warning Messages  ] :" "$(cat /etc/motd | grep "Administrator Access Only" | awk -F " " '{print $1" "$2" "$3}')" "Administrator Access Only"
+	elif [ $(cat ./.SecurityInfo | grep "U-67" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "10.[U-67|Warning Messages  ] : Already applied\n"
+	else
+		echo "10.[U-67|Warning Messages  ] : Error\n"
+	fi
+	sleep 1
+}
+
+
+# U-69
+function NFSinactive()
+{	
+	cmp1=$(ls -al /etc/xinetd.d/ | awk -F " " '{print $1}' | sed -n 2p)
+	cmp2="drw-------."
+	if [ -e /etc/exports ]
+	then
+		#위험
+        	echo "14.[U-68|NFS Service       ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "14.[U-68|NFS Service       ] : SAFE\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=81
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-68|NFS Service       ] Check... " 10 55 0
+	sleep 1
+}
+
+function NFSinactiveExcute()
+{	
+	preValue=$(ls -al /etc/exports | awk -F " " '{print $9}')
+	if [ $(cat ./.SecurityInfo | grep "U-68" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "14.[U-68|NFS Service       ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-68" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup exports /etc/exports "14.[U-68|NFS Service       ] :"
+    		rm -rf /etc/exports
+    		if [ -e /etc/exports ]
+		then
+			CompareValue "14.[U-68|NFS Service       ] :" "$(ls -al /etc/exports | awk -F " " '{print $9}')" ""
+			echo "  - Before Value : $preValue"
+			echo "  - After  Value : $(ls -al /etc/exports | awk -F " " '{print $9}')"
+		else
+			CompareValue "14.[U-68|NFS Service       ] :" "" ""
+			echo "  - Before Value : $preValue"
+			echo "  - After  Value : -"
+		fi	
+	else
+		echo "14.[U-68|NFS Service       ] : Error\n"
+	fi	
+}
+
+
+###########################################################
+
+# 5. 로그 관리
+
+###########################################################
+
+# U-72
+function logPolicy()
+{	
+	cmp1=$(cat /etc/rsyslog.conf | grep "*.alert")
+	if [ -z "$cmp1" ]
+	then
+		#위험
+        	echo "15.[U-73|Logging Policy    ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "15.[U-73|Logging Policy    ] : SAFE\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: *.alert\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=89
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-73|Logging Policy    ] Check... " 10 55 0
+	sleep 1
+}
+
+function logPolicyExcute()
+{	
+	preValue=$(cat /etc/rsyslog.conf | grep "*.alert")
+	if [ -z "$preValue" ]
+	then
+		preValue="-"
+	fi	
+
+	if [ $(cat ./.SecurityInfo | grep "U-73" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "15.[U-73|Logging Policy    ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-73" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup rsyslog.conf /etc/rsyslog.conf "15.[U-73|Logging Policy    ] :"
+    		echo "*.alert                                                 /dev/console" >> /etc/rsyslog.conf
+    		systemctl restart rsyslog.service
+		CompareValue "15.[U-73|Logging Policy    ] :" "$(cat /etc/rsyslog.conf | grep "*.alert" | awk -F " " '{print $1}')" "*.alert"
+		echo "  - Before Value : $preValue"
+		echo "  - After  Value : $(cat /etc/rsyslog.conf | grep "*.alert")"
+	else
+		echo "15.[U-73|Logging Policy    ] : Error\n"
+	fi	
+}
+
+
+###########################################################
+
+# 6. 추가 조치 항목
+
+###########################################################
+
+# ASU-01
+# KISA 항목 없음
+function ipForward()
+{
+	cmp1=$(cat /proc/sys/net/ipv4/ip_forward)
+	cmp2=$(cat /proc/sys/net/ipv4/conf/default/accept_source_route)
+
+	if [[ "$cmp1" = "0" ]] && [[ "$cmp2" = "0" ]] 
+	then
+        	#안전cc
+        	echo "11.[ASU-01|IP Forwarding     ] : SAFE\n" >> ./.SecurityInfo
+    	else
+		#위험
+        	echo "11.[ASU-01|IP Forwarding     ] : WARN\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: ipforward=0, acceptRoute=0\n" >> ./.SecurityInfo
+	echo " *current: ipforward=${cmp1}, acceptRoute=${cmp2}\n\n" >> ./.SecurityInfo
+	Progress=59
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [ASU-01|IP Forwarding     ] Check... " 10 55 0
+	sleep 1
+
+}
+
+function ipForwardExcute()
+{	
+	preValueIpFoward=$(cat /proc/sys/net/ipv4/ip_forward)
+	preValueAcceptRoute=$(cat /proc/sys/net/ipv4/conf/default/accept_source_route)
+	if [ $(cat ./.SecurityInfo | grep "ASU-01" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "11.[ASU-01|IP Forwarding     ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "ASU-01" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup ip_forward /proc/sys/net/ipv4/ip_forward "11.[ASU-01|IP Forwarding     ] :"
+    		filebackup accept_source_route /proc/sys/net/ipv4/conf/default/accept_source_route "11.[ASU-01|IPforward inactive] :"
+    		filebackup sysctl.conf /etc/sysctl.conf "11.[ASU-01|IP Forwarding     ] :"
+    		/sbin/sysctl -w net.ipv4.ip_forward=0 >& /dev/null
+    		/sbin/sysctl -w net.ipv4.conf.default.accept_source_route=0 >& /dev/null
+    	if [ "$(md5sum /etc/sysctl.conf | awk -F " " '{print $1}')" != "$(md5sum sysctl.conf | awk -F " " '{print $1}')" ]
+    		then
+    		\cp /WinsCloud_Tool/2.RPM/5.sysctl/.sysctl.conf /etc/sysctl.conf
+    	fi
+		CompareValue "11.[ASU-01|IP Forwarding     ] :" "$(cat /proc/sys/net/ipv4/ip_forward)$(cat /proc/sys/net/ipv4/conf/default/accept_source_route)" "00"
+		echo "  - Before Value : ip_forward=$preValueIpFoward / accept_source_route=$preValueAcceptRoute"
+		echo "  - After  Value : ip_forward=$(cat /proc/sys/net/ipv4/ip_forward) / accept_source_route=$(cat /proc/sys/net/ipv4/conf/default/accept_source_route)"
+	else
+		echo "11.[ASU-01|IP Forwarding     ] : Error\n"
+	fi	
+}
+
+
+# ASU-02
+# KISA 항목 없음
+function icmpRedirectsValue()
+{
+	icmp01=$(cat /proc/sys/net/ipv4/conf/all/accept_redirects)
+	icmp02=$(cat /proc/sys/net/ipv4/conf/all/send_redirects)
+	icmp03=$(cat /proc/sys/net/ipv4/conf/default/accept_redirects)
+	icmp04=$(cat /proc/sys/net/ipv4/conf/default/send_redirects)
+	icmp05=$(cat /proc/sys/net/ipv4/conf/eth0/accept_redirects)
+	icmp06=$(cat /proc/sys/net/ipv4/conf/eth0/send_redirects)
+	icmp07=$(cat /proc/sys/net/ipv4/conf/eth1/accept_redirects)
+	icmp08=$(cat /proc/sys/net/ipv4/conf/eth1/send_redirects)
+	icmp09=$(cat /proc/sys/net/ipv4/conf/lo/accept_redirects)
+	icmp10=$(cat /proc/sys/net/ipv4/conf/lo/send_redirects)
+	icmp11=$(cat /proc/sys/net/ipv6/conf/all/accept_redirects)
+	icmp12=$(cat /proc/sys/net/ipv6/conf/default/accept_redirects)
+	icmp13=$(cat /proc/sys/net/ipv6/conf/eth0/accept_redirects)
+	icmp14=$(cat /proc/sys/net/ipv6/conf/eth1/accept_redirects)
+	icmp15=$(cat /proc/sys/net/ipv6/conf/lo/accept_redirects)
+	icmpv4="$icmp01$icmp02$icmp03$icmp04$icmp05$icmp06$icmp07$icmp08$icmp09$icmp10"
+	icmpv6="$icmp11$icmp12$icmp13$icmp14$icmp15"
+}
+
+function icmpRedirects()
+{
+	icmpRedirectsValue
+	if [[ "$icmpv4" = "0000000000" ]] && [[ "$icmpv6" = "00000" ]] && [[ "$(md5sum /etc/sysctl.conf | awk -F " " '{print $1}')" == "$(md5sum sysctl.conf | awk -F " " '{print $1}')" ]]
+	then
+        	#안전
+        	echo "12.[ASU-02|ICMP Redirects    ] : SAFE\n" >> ./.SecurityInfo
+    	else
+		#위험
+        	echo "12.[ASU-02|ICMP Redirects    ] : WARN\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: icmpv4=0000000000, icmpv6=00000\n" >> ./.SecurityInfo
+	echo " *current: icmpv4=${icmpv4}, icmpv6=${icmpv6}\n\n" >> ./.SecurityInfo
+	Progress=66
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [ASU-02|ICMP Redirects    ] Check... " 10 55 0
+	sleep 1
+}
+
+
+# ASU-03
+# KISA 항목 없음
+function suLog()
+{	
+	cmp1=$(cat /etc/login.defs | grep "SULOG_FILE")
+	cmp2=$(cat /etc/rsyslog.conf | grep "/var/log/sulog")
+	if [[ -z "$cmp1" ]] || [[ -z "$cmp2" ]]
+	then
+		#위험
+        	echo "16.[ASU-03|su Log File       ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "16.[ASU-03|su Log File       ] : SAFE\n" >> ./.SecurityInfo
+	fi	
+	echo " *suggest: Setting to config(/etc/login.defs,rsyslog.conf)\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1} ${cmp2}\n\n" >> ./.SecurityInfo
+	Progress=93
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [ASU-03|su Log File       ] Check... " 10 55 0
+	sleep 1
+}
+
+function suLogExcute()
+{	
+	preValue1=$(cat /etc/login.defs | grep "SULOG_FILE")
+	prevalue2=$(cat /etc/rsyslog.conf | grep "/var/log/sulog")
+	if [[ -z "$preValue1" ]] || [[ -z "$preValue2" ]]
+		then
+		preValue1="-"
+		preValue2="-"
+	fi	
+
+	if [ $(cat ./.SecurityInfo | grep "ASU-03" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "16.[ASU-03|su Log File       ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "ASU-03" | awk -F ": " '{print $2}') == "WARN\n" ]
+    	then
+    		filebackup login.defs /etc/login.defs "16.[ASU-03|su Log File       ] :"
+    		filebackup rsyslog.conf /etc/rsyslog.conf "16.[ASU-03|su Log File       ] :"
+    		echo "SULOG_FILE /var/log/sulog" >> /etc/login.defs
+    		echo "auth.info                                               /var/log/sulog" >> /etc/rsyslog.conf
+		CompareValue "16.[ASU-03|su Log File       ] :" "$(cat /etc/login.defs | grep "SULOG_FILE")$(cat /etc/rsyslog.conf | grep "/var/log/sulog")" "SULOG_FILE /var/log/sulogauth.info                                               /var/log/sulog"
+		echo "  - Before Value : $preValue1 / $preValue2"
+		echo "  - After  Value : $(cat /etc/login.defs | grep "SULOG_FILE") / $(cat /etc/rsyslog.conf | grep "/var/log/sulog")"
+	else
+		echo "16.[ASU-03|su Log File       ] : Error\n"
+	fi	
+}
+
 
 #End of Shell Script
 
