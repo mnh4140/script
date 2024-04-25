@@ -2,13 +2,11 @@
 
 ################################################
 
-# Update : 2024-04-25
+# Update : 2024-04-24
 # Cloud Security Setting Scripts(Rocky Linux 8.X, Ubuntu 22.04)
 # TEST CSP : KT Cloud, AWS
 
 ################################################
-
-# 여러 OS에서 동작 하도록 스크립트 Core 부분 분리
 
 #Start of Shell Scripts
 
@@ -109,11 +107,10 @@ function filebackup() # 취약점 조치 시, 변경되는 파일 백업 수행
 	if [ -e $(pwd)/BACKUP/$1 ]
 	then
 		echo "$3 Backup Exists    : $2 -> ./BACKUP/$1" >> $LOGFILE
+    then
+        echo "$3 Backup Exists    : $2 -> ./BACKUP/$1" >> $LOGFILE
 	else
-		#\cp $2 /root/WinsCloud_Tool/1.Tool/BACKUP/$1
-		## \cp $2 $(pwd)/BACKUP/$1
 		\cp -r $2 $(pwd)/BACKUP/$1
-		#if [ -f /root/WinsCloud_Tool/1.Tool/BACKUP/$1 ]
 		if [ -e $(pwd)/BACKUP/$1 ]
 		then
 			echo "$3 Backup Completed : $2 -> ./BACKUP/$1" >> $LOGFILE
@@ -159,7 +156,16 @@ function ServerInfo() # 서버 정보 출력
 
 function CheckSecurity() # 취약점 점검 수행
 {
-	U-15
+    echo "# 1. 계정 관리" >> $LOGFILE ## 로깅
+	# U-02
+    PwdComplexity
+    # U-03
+    AccountLockCritical
+    # U-04
+    U-04
+    # U-46
+    PwdMinLength
+    echo "U-15 끝" >> $LOGFILE ## 로깅
 	echo "[Check Result]" >> $LOGFILE
 	echo "$(cat ./.SecurityInfo)" >> $LOGFILE
 	sed -i 's/\\n//g' $LOGFILE
@@ -171,24 +177,29 @@ function CheckSecurity() # 취약점 점검 수행
     	case $answer in
         	0)
             	SettingSecurity
+                echo "조치 끝" >> $LOGFILE ## 로깅
             ;;
         	1)
                 dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n  # User select 'NO'.\n  # Exit the Cloud Security Setting." 25 70
                 echo "[Setting Result]" >> $LOGFILE
                 echo "User select 'NO'" >> $LOGFILE
-                #rm -rf ./.SecurityInfo
+                rm -rf ./.SecurityInfo
+                echo "SecurityInfo 삭제" >> $LOGFILE ## 로깅
+                echo "메뉴 진입" >> $LOGFILE ## 로깅
                 menu
             ;;
         	255)
                 dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n  # User select 'NO'.\n  # Exit the Cloud Security Setting." 25 70
                 echo "[Setting Result]" >> $LOGFILE
                 echo "User select 'NO'" >> $LOGFILE
-                #rm -rf ./.SecurityInfo
+                echo "SecurityInfo 삭제" >> $LOGFILE ## 로깅
+                rm -rf ./.SecurityInfo
             exit
             ;;
     	esac
-	#rm -rf ./.SecurityInfo
-	#rm -rf ./.SecuritySet
+    echo "SecurityInfo 삭제" >> $LOGFILE ## 로깅
+    rm -rf ./.SecurityInfo
+    echo "메뉴 진입" >> $LOGFILE ## 로깅
 	menu
 }
 
@@ -196,8 +207,26 @@ function SettingSecurity() # 취약점 조치 수행
 {
 	echo "[Backup Result] : $(pwd)/BACKUP/" >> $LOGFILE
 	
-	echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-00|사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정] Setting... " 10 55 0
-	U-15_execute >> ./.SecuritySet
+	#echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-00|사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정] Setting... " 10 55 0
+	#U-15_execute >> ./.SecuritySet
+
+    # U-02
+    echo  4 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-00|패스워드 복잡도] Setting... " 10 55 0
+    PwdComplexityExcute >> ./.SecuritySet
+    # U-03
+    echo  8 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-03|Account Lock-1    ] Setting... " 10 55 0
+	echo 11 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-03|Account Lock-2    ] Setting... " 10 55 0
+    AccountLockCriticalExcute >> ./.SecuritySet
+    # U-04
+    echo 11 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-03|Account Lock-2    ] Setting... " 10 55 0
+    U-04_execute >> ./.SecuritySet
+    # U-46
+    echo 11 | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-46|PwdMinLength    ] Setting... " 10 55 0
+    PwdMinLengthExcute >> ./.SecuritySet
+    # U-47 패스워드 만료기간 확인 함수
+    PwdMaxDaysExcute
+    
+
 
 	sleep 1
 	dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "[Setting Result]\n$(cat ./.SecuritySet | grep -v "Before" | grep -v "After" | grep -v "#" | grep -v "ASSURING" | grep -v "Unauthrozied" | grep -v ^$ |grep "[|]")  # Cloud Security Setting is Completed!" 25 70
@@ -207,6 +236,7 @@ function SettingSecurity() # 취약점 조치 수행
 	echo "$(cat ./.SecuritySet)" >> $LOGFILE
 	sed -i 's/\\n//g' $LOGFILE
 	echo "" >> $LOGFILE
+    rm -rf ./.SecuritySet
 }
 
 function Initialize() # 작업 원복 수행
@@ -343,19 +373,23 @@ function menu() # 스크립트 메뉴 실행
 	case $? in
         0)
             case $OPTION in
-            	1)
-                	CheckSecurity
+                1)
+                    echo "점검 함수 진입" >> $LOGFILE ## 로깅
+                    CheckSecurity
+                    echo "점검 끝" >> $LOGFILE ## 로깅
                 ;;
-            	2)
-				    SuRootLimit
+                2)
+                    echo "Wheel 그룹 진입" >> $LOGFILE ## 로깅
+                    SuRootLimit
+                    echo "Wheel 그룹 끝" >> $LOGFILE ## 로깅
 				;;
-            	3)
-				    SshRootLimit
+                3)
+                    SshRootLimit
 				;;
-            	4)
-				    Initialize
+                4)
+                    Initialize
 				;;
-		    esac
+            esac
 		;;
         1)
             echo "******************************************************************************" >> $LOGFILE
@@ -363,7 +397,7 @@ function menu() # 스크립트 메뉴 실행
             echo "******************************************************************************" >> $LOGFILE
             echo ""
 			clear
-           	exit
+            exit
         ;;
         255)
             exit
@@ -399,6 +433,7 @@ function main() # 실제 동작 함수
 	menu
 	logTail
 }
+
 
 clear
 
