@@ -1,0 +1,524 @@
+#!/bin/bash
+
+################################################
+
+# Update : 2024-04-25
+# Cloud Security Setting Scripts(Rocky Linux 8.X)
+# TEST CSP : KT Cloud, AWS
+
+################################################
+
+# 기존 스크립트에서 rocky OS 관련 함수만 따로 분리한 버전
+# Core 함수는 main.sh로 분리
+
+#Start of Shell Scripts
+
+###############################################################################################################
+
+# 패키지 설치
+## 패키지 설치 목록
+### 1. DialogSetup()	#	DIalog 패키지 설치 함수 / Rocky Linux는 다른 버전 설치 해야 됨
+
+###############################################################################################################
+
+function DialogSetup()	#	DIalog 패키지 설치 함수 / Rocky Linux는 다른 버전 설치 해야 됨
+{
+	dialogRPM=$(rpm -qa |grep dialog)
+
+	if [ -z "$dialogRPM" ]
+		then
+		# 기존 코드 : rpm -ivh /root/WinsCloud_Tool/2.RPM/4.dialog/dialog-1.2-4.20130523.el7.x86_64.rpm &> /dev/null
+		#	버전 호환 안됨 
+		#		* 기존 : dialog-1.2-4.20130523.el7.x86_64.rpm 
+		#		* 변경 : dialog-1.3-13.20171209.el8.x86_64.rpm
+		#	설치 경로 하드코딩 -> 사용자 경로 받아오는 방법으로 변경
+		#		* 기존 : /root/WinsCloud_Tool/2.RPM/4.dialog/
+		#		* 변경 : $(pwd)/../2.RPM/4.dialog/
+		# 변경 코드┐
+		rpm -ivh $(pwd)/../2.RPM/4.dialog/dialog-1.3-13.20171209.el8.x86_64.rpm &> /dev/null
+		#
+		dialogRPM=$(rpm -qa |grep dialog)
+		#
+		if [ -n "$dialogRPM" ]
+			then
+			echo -e "  [INFO] [\033[0;32m Success \033[0m] Dialog Setup complete."
+		else
+        	echo -e "  [ERROR][\033[0;31m  Fail   \033[0m] Dialog Setup Fail."
+		fi
+	elif [ -n "$dialogRPM" ];
+		then
+		echo -e "  [INFO] [\033[0;32m   OK    \033[0m] Dialog Already Setup."
+	fi
+}
+
+# U-01 SshRootLimit 참조 함수
+function SshRestart()	#	SSH 데몬 재시작 함수
+{
+    dialog --title "$TITLE" --backtitle "$BACKTITLE" --yesno "\n[Setting Result]\n\n #[OK]\n  $setResult $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")\n\n # Do you want to restart SSHD Service?" 15 55		
+    answer=$?
+    case $answer in
+        0)
+			systemctl restart sshd.service
+			echo "# SSHD Service restart completed." >> $(pwd)/LOG/security/$logfilename.log
+			echo "" >> $(pwd)/LOG/security/$logfilename.log
+            ;;
+        1)
+			echo "# Didn't restart the SSHD Service." >> $(pwd)/LOG/security/$logfilename.log
+			echo "" >> $(pwd)/LOG/security/$logfilename.log
+            ;;
+        255)
+			echo "# Didn't restart the SSHD Service." >> $(pwd)/LOG/security/$logfilename.log
+			echo "" >> $(pwd)/LOG/security/$logfilename.log
+            ;;
+    esac
+}
+
+
+
+###############################################################################################################
+
+# 2021 클라우드 취약점 조치 항목 추가
+
+###############################################################################################################
+
+# 구 U-05 패스워드 파일 보호
+# U-04
+function U-04()
+{
+	## echo -e " U-05. 패스워드 파일 보호" >> $(pwd)/LOG/security/$logfilename.log
+	
+	# /etc/shadow 존재 유무 확인
+	shadow_file="/etc/shadow"
+	passwd_file="/etc/passwd"
+	
+	# 비밀번호가 암호화 되어 있는 계정 수
+	encrypted_count=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	# 전체 계정 수
+	total_accounts=$(grep -c -v '^$' "$passwd_file")
+	
+	if [ -e "$shadow_file" ]; then
+		if [ "$encrypted_count" -eq "$total_accounts" ]; then
+			echo "00.[U-04|Password file protect ] : SAFE\n" >> ./.SecurityInfo
+		else
+			echo "00.[U-04|Password file protect ] : WARN\n" >> ./.SecurityInfo
+		fi
+	else
+		echo "00.[U-04|Password file protect ] : WARN\n" >> ./.SecurityInfo
+	fi
+
+	echo " *suggest: total user : $total_accounts\n" >> ./.SecurityInfo
+	echo " *current: encrypted user password : $encrypted_count\n\n" >> ./.SecurityInfo
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[U-04|Password file protect ] Check... " 10 55 0
+}
+
+function U-04_execute()
+{
+	#echo " U-05. 패스워드 파일 보호"  >> $(pwd)/LOG/security/$logfilename.log
+	
+	# 설정 파일 백업 수행
+	#filebackup shadow /etc/shadow "File Backup :"
+	
+	# /etc/shadow 존재 유무 확인
+	shadow_file="/etc/shadow"
+	passwd_file="/etc/passwd"
+	
+	# 비밀번호가 암호화 되어 있는 계정 수
+	encrypted_count=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	# 전체 계정 수
+	total_accounts=$(grep -c -v '^$' "$passwd_file")
+	
+	#preValue=$(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)
+	
+	if [ $(cat ./.SecurityInfo | grep "U-04" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "00.[U-04|Password file protect ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep "U-04" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		# 백업 필요 없음
+		pwconv # shadow 파일 사용 명령어
+		if [ -e "$shadow_file" ]; then
+			echo "00.[U-04|Password file protect ] : Setting Sucess\n "
+		else
+			echo "00.[U-04|Password file protect ] : Error\n"
+		fi
+		echo "  - Before Value : $encrypted_count"
+		echo "  - After  Value : $(awk -F: '$2 == "x" {count++} END {print count}' $passwd_file)"
+    else
+		echo "00.[U-04|Password file protect ] : Error\n"
+    fi
+}
+
+
+
+# 구 U-15 사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정
+# U-14
+function Check_permission()
+{
+	if [ $(stat -c %a /etc/bashrc) == 644 ] || [ $(stat -c %a /etc/bashrc) == 640 ] || [ $(stat -c %a /etc/bashrc) == 660 ]
+	then
+		if [ $(stat -c %a /etc/profile) == 644 ] || [ $(stat -c %a /etc/profile) == 640 ] || [ $(stat -c %a /etc/profile) == 660 
+		then
+			sys_permission=true
+		else
+			sys_permission=false
+		fi
+	else
+		sys_permission=false
+	fi
+
+	isgood=0
+	
+	for i in "${Homedir[@]}";
+    do
+		if [ $(stat -c %a /home/$i/.bashrc) == 644 ] || [ $(stat -c %a /home/$i/.bashrc) == 640 ] || [ $(stat -c %a /home/$i/.bashrc) == 660 ]
+		then 
+			if [ $(stat -c %a /home/$i/.bash_profile) == 644 ] || [ $(stat -c %a /home/$i/.bash_profile) == 640 ] || [ $(stat -c %a /home/$i/.bash_profile) == 660 ]
+			then
+				$((isgood++))
+			fi
+		#else
+		fi
+	done
+	
+	if [ $isgood == $homecount ] && [ $sys_permission == true ]
+	then
+		echo "00.[U-14|System Conf file - Permision ] : SAFE\n" >> ./.SecurityInfo
+	else
+		echo "00.[U-14|System Conf file - Permision ] : WAE\n" >> ./.SecurityInfo
+	fi
+
+	echo " *suggest: /etc/profile : 644\n           /etc/bashrc : 644\n           /home/유저네임/.bashrc : 644\n           /home/유저네임/.bash_profile : 644\n" >> ./.SecurityInfo
+    echo " *current: /etc/profile : $(stat -c %a /etc/profile)\n           /etc/bashrc : $(stat -c %a /etc/bashrc)" >> ./.SecurityInfo
+	
+	for usr in "${Homedir[@]}";
+	do
+			echo "\n           /home/$usr/.bashrc : $(stat -c %a /home/$i/.bashrc)" >> ./.SecurityInfo
+			echo "\n           /home/$usr/.bash_profile :$(stat -c %a /home/$i/.bash_profile)" >> ./.SecurityInfo
+	done
+	echo "  \n\n" >> ./.SecurityInfo
+
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[U-14|System Conf file - Permision ] Check... " 10 55 0
+}
+
+function Check_own()
+{
+	# /etc/profile 소유권 확인
+	profile_own=$(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+	# /etc/bashrc 소유권 확인
+	bashrc_own=$(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+	
+	if [ $profile_own == rootroot ] && [ $bashrc_own == rootroot ]
+	then 
+		isgoodsysown=true
+	else
+		isgoodsysown=false
+	fi
+
+	
+	for usrhome in "${Homedir[@]}";
+	do
+		# 홈 디렉터리 .bash_profile 소유권 확인
+		usr_profile_own=$(ls -al /home/$usrhome/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		# 홈 디렉터리 .bashrc  소유권 확인
+		usr_bashrc_own=$(ls -al /home/$usrhome/.bashrc | awk -F " " '{print $3  $4}' | grep -v ^$)
+		
+		if [ $usr_profile_own == $usrhome$usrhome ] && [ $usr_bashrc_own == $usrhome$usrhome ]
+		then 
+			isgoodusrown=true
+		else
+			isgoodusrown=false
+		fi
+	done
+
+	if [ $isgoodsysown == true ] && [ $isgoodusrown == true ]
+	then
+		echo "   [U-14|System Conf file - Ownership ] : SAFE\n" >> ./.SecurityInfo
+	else
+		echo "   [U-14|System Conf file - Ownership ] : WARN\n" >> ./.SecurityInfo
+	fi
+	
+	echo " *suggest: /etc/profile : rootroot\n           /etc/bashrc : rootroot\n           /home/유저네임/.bashrc : rootroot\n           /home/유저네임/.bash_profile : rootroot\n" >> ./.SecurityInfo
+    echo " *current: /etc/profile : $profile_own\n           /etc/bashrc : $bashrc_own" >> ./.SecurityInfo
+	
+	for usr in "${Homedir[@]}";
+	do
+		# 홈 디렉터리 .bash_profile 소유권 확인
+		check_usr_profile_own=$(ls -al /home/$usr/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		# 홈 디렉터리 .bashrc  소유권 확인
+		check_usr_bashrc_own=$(ls -al /home/$usr/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+		
+		echo "\n           /home/$usr/.bashrc : $check_usr_bashrc_own" >> ./.SecurityInfo
+		echo "\n           /home/$usr/.bash_profile :$check_usr_profile_own" >> ./.SecurityInfo
+	done
+	echo "  \n\n" >> ./.SecurityInfo
+
+	Progress=5
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   00.[U-14|System Conf file - Permision ] Check... " 10 55 0
+}
+
+function Execute_permission() 
+{
+	for e in "${Homedir[@]}"; 
+	do
+		before_usr_bashrc+="/home/$e/.bashrc = $(stat -c %a /home/$e/.bashrc)\n                   "
+		before_usr_bash_profile+="/home/$e/.bash_profile = $(stat -c %a /home/$e/.bash_profile)\n                   "
+	done
+	
+	before_sys_bashrc=$(stat -c %a /etc/bashrc)
+	before_sys_profile=$(stat -c %a /etc/profile)
+	
+	if [ $(cat ./.SecurityInfo | grep -E "00.\[U-14" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "00.[U-14|System Conf file - Permision ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep -E "[U-14" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup profile /etc/profile "File Backup :" #추가 백업 파일
+		filebackup bashrc /etc/bashrc "File Backup :" # 추가 백업 파일
+		for i in "${Homedir[@]}"; # 홈 디렉터리 백업
+		do
+			filebackup $i /home/$i "File Backup :" # 홈 디렉터리 백업
+		done
+		
+		chmod 644 /etc/bashrc
+		chmod 644 /etc/profile
+		
+		for exce_usrhome in "${Homedir[@]}";
+		do
+			chmod 644 /home/$ex_usrhome/.bashrc
+			chmod 644 /home/$ex_usrhome/.bash_profile
+		done
+		echo "00.[U-14|System Conf file - Permision ] : Setting Sucess\n "
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc\n                   /etc/profile : $before_sys_profile\n                   $before_usr_bashrc\n                   $before_usr_bash_profile"
+	
+		echo -e "  - After  Value : /etc/bashrc : $(stat -c %a /etc/bashrc)\n                   /etc/profile : $(stat -c %a /etc/profile)"
+	
+		for after in "${Homedir[@]}";
+		do
+			echo -e "\n                   /home/$after/.bashrc : $(stat -c %a /home/$after/.bashrc)\n/                   home/$after/.bash_profile : $(stat -c %a /home/$after/.bash_profile)"
+		done
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc\n                   /etc/profile : $before_sys_profile\n                   $before_usr_bashrc$before_usr_bash_profile"
+		
+		echo -e "  - After  Value : /etc/bashrc : $(stat -c %a /etc/bashrc)\n                   /etc/profile : $(stat -c %a /etc/profile)"
+		
+		for after in "${Homedir[@]}";
+		do
+			echo -e "                   /home/$after/.bashrc : $(stat -c %a /home/$after/.bashrc)\n                   /home/$after/.bash_profile : $(stat -c %a /home/$after/.bash_profile)"
+		done
+	else
+		echo "00.[U-14|System Conf file - Permision ] : Error\n"
+	fi
+
+}
+	
+function Execute_own()
+{
+	for i in "${Homedir[@]}";
+	do
+		before_usr_bashrc_own+="/home/$i/.bashrc = $(ls -al /home/$usrhome/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   "
+		before_usr_bash_profile_own+="/home/$i/.bash_profile = $(ls -al /home/$i/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   "
+	done
+	
+	before_sys_bashrc_own=$(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)
+	before_sys_profile_own=$(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)
+	
+	
+	if [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[U-14" | awk -F ": " '{print $2}') == "SAFE\n" ]
+	then
+		echo "   [U-14|System Conf file - Ownership ] : Already applied\n"
+	elif [ $(cat ./.SecurityInfo | grep -E "\ \ \ \[U-14" | awk -F ": " '{print $2}') == "WARN\n" ]
+	then
+		filebackup profile /etc/profile "File Backup :" #추가 백업 파일
+		filebackup bashrc /etc/bashrc "File Backup :" # 추가 백업 파일
+		for i in "${Homedir[@]}"; # 홈 디렉터리 백업
+		do
+			filebackup $i /home/$i "File Backup :" # 홈 디렉터리 백업
+			before_usr_bashrc+="/home/$i/.bashrc = $(stat -c %a /home/$i/.bashrc)\n"
+			before_usr_bash_profile+="/home/$i/.bash_profile = $(stat -c %a /home/$i/.bash_profile)\n"
+		done
+		chown root:root /etc/bashrc
+		chown root:root /etc/profile
+		for exce_usrhome in "${Homedir[@]}";
+		do
+			chown $exce_usrhome:$exce_usrhome /home/$exce_usrhome/.bashrc
+			chown $exce_usrhome:$exce_usrhome /home/$exce_usrhome/.bash_profile
+		done
+		echo "   [U-14|System Conf file - Ownership ] : Setting Sucess\n "
+		echo -e "  - Before Value : /etc/bashrc : $before_sys_bashrc_own\n                   /etc/profile : $before_sys_profile_own\n                   $before_usr_bashrc_own$before_usr_bash_profile_own"
+		
+		echo -e "  - After  Value : /etc/bashrc : $(ls -al /etc/bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   /etc/profile : $(ls -al /etc/profile | awk -F " " '{print $3 $4}' | grep -v ^$)"
+		
+		for after in "${Homedir[@]}";
+		do
+			echo -e "                   /home/$after/.bashrc : $(ls -al /home/$after/.bashrc | awk -F " " '{print $3 $4}' | grep -v ^$)\n                   /home/$after/.bash_profile : $(ls -al /home/$after/.bash_profile | awk -F " " '{print $3 $4}' | grep -v ^$)"
+		done	
+	else
+		echo "   [U-14|System Conf file - Ownership ] : Error\n"
+	fi
+
+
+}
+
+
+function U-14()
+{
+	Homedir=(`ls /home`)
+	homecount=$(ls -l /home/ | grep -v total | wc -l)
+	Check_permission
+	Check_own
+}
+
+function U-14_execute()
+{
+	Execute_permission
+	Execute_own
+}
+
+
+# 구 U-06
+# U-45
+function wheelgroup()
+{
+	ret=0
+	if [ -z "$(cat /etc/group | grep wheel | grep ",$1,")" ]
+	then
+	    if [ "$1" = "$(cat /etc/group | grep wheel | awk -F "," '{print $NF}')" ]
+	    then
+	    	ret=1
+    	    else
+	       	ret=2
+	    fi
+	else
+	    ret=2
+	fi
+}
+
+function SuRootLimit_config()
+{
+	cmp1=$(cat /etc/pam.d/su | grep auth | grep required | awk -F " " '{print $1" "$2" "$3" "$4" "$5}')
+	cmp2="auth required pam_wheel.so debug group=wheel"
+
+	if [ -z "$cmp1" -o "$cmp1" != "$cmp2" ]
+	then
+		#위험
+        	echo "10.[U-67|Warning Messages  ] : WARN\n" >> ./.SecurityInfo
+	else
+        	#안전
+        	echo "10.[U-67|Warning Messages  ] : SAFE\n" >> ./.SecurityInfo
+	fi
+	echo " *suggest: ${cmp2}\n" >> ./.SecurityInfo
+	echo " *current: ${cmp1}\n\n" >> ./.SecurityInfo
+	Progress=51
+	echo $Progress | dialog --backtitle "$BACKTITLE" --title "$TITLE" --gauge "Please wait...\n\n   [U-67|Warning Messages  ] Check... " 10 55 0
+	sleep 1
+}
+
+function SuRootLimit()
+{
+    	userid=$(dialog --backtitle "$BACKTITLE" --title "$TITLE" --inputbox "Enter User ID (Include for Wheel Group)" 10 55  3>&1 1>&2 2>&3 3>&-)
+    	case $? in
+        	0)
+				if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
+				then
+					useradd "$userid"
+					passwd "$userid"
+					if [ "$userid" != "$(cat /etc/passwd | awk -F ":" '{print $1}' | grep "^$userid$")" ]
+					then
+						echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+						echo " # '$userid' creation failed." >> $(pwd)/LOG/security/$logfilename.log			
+					else
+						echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+						echo " # '$userid' creation success." >> $(pwd)/LOG/security/$logfilename.log
+					fi
+				else
+					useradd "$userid"
+					echo "[U-06|User Create][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
+					echo " # '$userid' Already exists." >> $(pwd)/LOG/security/$logfilename.log				
+					sleep 1
+				fi
+
+				wheelgroup $userid
+				if [ $ret -eq 1 ]
+				then
+					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Already applied.\n  '$userid' Already included in wheel group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [OK][U-06|SU - Root Limit] Already applied." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# '$userid' Already included in wheel group." >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+					echo " " >> $(pwd)/LOG/security/$logfilename.log
+				elif [ $ret -eq 2 ]
+				then
+					chgrp wheel /bin/su
+					usermod -G wheel root
+					usermod -G wheel $userid
+					chmod 4750 /bin/su
+					wheelgroup $userid
+					if [ $ret -eq 1 ]
+					then
+						dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-06|SU - Root Limit] Setting Success.\n  '$userid' was successfully created.\n  '$userid' included in the 'wheel' group.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+						echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+						echo "# [OK][U-06|SU - Root Limit] Setting Success." >> $(pwd)/LOG/security/$logfilename.log
+						echo "# '$userid' was successfully created. '$userid' included in the 'wheel' group." >> $(pwd)/LOG/security/$logfilename.log
+						echo "# [wheel group List] $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+						echo " " >> $(pwd)/LOG/security/$logfilename.log
+					else
+						dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Setting Fail.\n  '$userid' has failed to create.\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+						echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+						echo "# [ERROR][U-06|SU - Root Limit] Setting Fail." >> $(pwd)/LOG/security/$logfilename.log
+						echo "# '$userid' has failed to create." >> $(pwd)/LOG/security/$logfilename.log
+						echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+						echo " " >> $(pwd)/LOG/security/$logfilename.log
+						menu
+					fi
+				else
+					dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[ERROR]\n  [U-06|SU - Root Limit] Check Fail. (return $ret)\n\n #[wheel group List]\n  $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" 15 55
+					echo "[U-06|SU - Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [ERROR][U-06|SU - Root Limit] Check Fail. (return $ret)" >> $(pwd)/LOG/security/$logfilename.log
+					echo "# [wheel group List] : $(cat /etc/group | grep wheel | awk -F ":" '{print $4}')" >> $(pwd)/LOG/security/$logfilename.log
+					echo " " >> $(pwd)/LOG/security/$logfilename.log
+							
+				fi	
+				menu		
+            ;;
+        	1)
+				menu
+			;;
+        	255)
+            	return 255
+            ;;
+    	esac
+}
+
+
+# U-01
+function SshRootLimit()
+{
+	if [ "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" = "PermitRootLogin no" ]
+	then
+        #안전
+		dialog --title "$TITLE" --backtitle "$BACKTITLE" --msgbox "\n[Setting Result]\n\n #[OK]\n  [U-01|SSH Root Limit] Already applied.\n  $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" 15 55
+		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log
+		echo "# [OK][U-01|SSH Root Limit] Already applied. - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
+		echo "" >> $(pwd)/LOG/security/$logfilename.log
+	else
+		#위험
+		echo "[U-01|SSH Root Limit][Setting Result]" >> $(pwd)/LOG/security/$logfilename.log	
+		filebackup sshd_config /etc/ssh/sshd_config "# [U-01|SSH Root Limit] :"
+		line=$(egrep -n "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no" /etc/ssh/sshd_config | awk -F ":" '{print$1}')"s"
+		sed -i "$line/.*/PermitRootLogin no/g" /etc/ssh/sshd_config
+		setResult=$(CompareValue "[U-01|SSH Root Limit]" "$(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" "PermitRootLogin no")
+		echo "# $setResult - $(cat /etc/ssh/sshd_config | egrep "#PermitRootLogin yes|PermitRootLogin yes|#PermitRootLogin no|PermitRootLogin no")" >> $(pwd)/LOG/security/$logfilename.log
+		SshRestart
+	fi
+	menu
+}
+
+#End of Shell Script
+
+
