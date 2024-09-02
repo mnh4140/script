@@ -1,0 +1,8 @@
+ 1. [U-45|root 계정 su 제한]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	The wheel group exists.
+			pam_wheel.so configuration set
+	- Current:	The wheel group exists.[34m
+			pam_wheel.so configuration not set[0m
+
+

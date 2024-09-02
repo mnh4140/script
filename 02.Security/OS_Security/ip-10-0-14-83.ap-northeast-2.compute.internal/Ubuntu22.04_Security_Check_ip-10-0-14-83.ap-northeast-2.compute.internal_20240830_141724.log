@@ -1,0 +1,6 @@
+ 1. [U-48|패스워드 최소 사용기간 설정]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	PASS_MIN_DAYS : 90
+	- Current:	PASS_MIN_DAYS : 0
+
+

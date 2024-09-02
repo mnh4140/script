@@ -1,0 +1,23 @@
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	[0;93mWARN:주석 처리 확인[0m
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Current:	
+
+
+ 2. [U-46|패스워드 최소 길이 설정]
+	- Check result:	[0;31mERROR[0m
+	- Suggestion:	10
+	- Current:	
+
+
+ 3. [U-47|패스워드 최대 사용기간 설정]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	90
+	- Current:	99999
+
+
