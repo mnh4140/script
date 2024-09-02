@@ -1,0 +1,8 @@
+ 1. [U-54|Session Timeout 설정]
+	- Check result:	[0;32mSAFE[0m
+	- Suggestion:	Session timeout set.
+			TMOUT<=300
+	- Current:	[1;34mSession timeout set.[0m
+			[1;34mTMOUT=100[0m
+
+

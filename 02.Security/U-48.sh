@@ -10,7 +10,6 @@ function U-48() {
 
 	CONFIG_FILE="/etc/login.defs"
 	
-	suggestionValue=""
     	currentValue=""
 
 

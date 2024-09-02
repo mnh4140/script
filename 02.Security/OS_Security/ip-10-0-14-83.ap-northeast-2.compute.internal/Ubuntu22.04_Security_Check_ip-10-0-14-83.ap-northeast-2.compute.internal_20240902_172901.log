@@ -36,7 +36,7 @@
 
 
  6. [U-46|패스워드 최소 길이 설정]
-	- Check result:	[0;31m31224[0m
+	- Check result:	[0;31mERROR[0m
 	- Suggestion:	10
 	- Current:	
 
@@ -49,13 +49,14 @@
 
  8. [U-48|패스워드 최소 사용기간 설정]
 	- Check result:	[1;33mWARN[0m
-	- Suggestion:	PASS_MIN_DAYS : 90
+	- Suggestion:	
 	- Current:	PASS_MIN_DAYS : 0
 
 
  9. [U-54|Session Timeout 설정]
 	- Check result:	[1;33mWARN:주석 처리 확인[0m
-	- Suggestion:	
+	- Suggestion:	Session timeout set.
+			TMOUT<=300
 	- Current:	
 
 
