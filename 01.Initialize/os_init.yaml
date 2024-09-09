@@ -6,7 +6,7 @@
 #  ### ###    ##     ##   ##  ##   ##            ##  ##   ##  ##  ##   ##  ##   ##   ## ##            ##   ##  ##   ##   ##                 ##      ##   #  ##  ##   ##   ## #
 #  ##   ##   ####    ##   ##   #####              ####   #######   #####    #####   #####             ##   ##   #####   ####               ####    #######  ##  ##   ##   ## #
 --- 
-- name: "Cloud MSP Rocky8.9 Initial set"
+- name: "Cloud MSP Rocky9 Initial set"
   hosts: Rocky
   become: yes
   gather_facts: no
@@ -246,5 +246,5 @@
      ###### 작업 완료 메세지
     - name: "TASK IS Done"
       debug:
-        msg: "ALL OF Rocky8.9 TASK IS Done" # 메시지 출력 / 모든 TASK 완료
+        msg: "ALL OF Rocky9 TASK IS Done" # 메시지 출력 / 모든 TASK 완료
 
