@@ -1,0 +1,7 @@
+ 1. [U-09|/etc/syslog.conf 파일 소유자 및 권한 설정]
+	- Check result:	ERROR:설정파일 없음
+	- Suggestion:	Set Permission 644, Owner is root
+	- Current:	Permission : 
+			Owner : 
+
+

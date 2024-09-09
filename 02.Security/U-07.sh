@@ -24,6 +24,8 @@ function U-07() {
                 fi
         else
                 securityState="ERROR:설정파일 없음"
+		permission=""
+                owner=""
         fi
 
         if [ -z "$securityState" ]; then # $securityState 값 없으면
@@ -37,7 +39,7 @@ function U-07() {
         suggestionValue="Set Permission $suggestion_permission or less, Owner is $suggestion_owner"
         currentValue="Permission : $permission\n\t\t\tOwner : $owner"
 
-        securityLog "U-07|$CONFIG_FILE 파일 소유자 및 권한 설정" "$suggestionValue" "$currentValue" "$securityState"
+        securityLog "${FUNCNAME[0]}|$CONFIG_FILE 파일 소유자 및 권한 설정" "$suggestionValue" "$currentValue" "$securityState"
 
 	init_var
 }
