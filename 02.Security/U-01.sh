@@ -10,7 +10,7 @@ function U-01() {
 	is_safe=false
 
 	# 취약점 진단 기준 값
-        suggestionValue="Set PermitRootLogin no or Comment"
+        suggestionValue="no"
 
 	# 현재 설정값
 	currentValue="$(grep '^\s*PermitRootLogin' $CONFIG_FILE | awk -F " " '{print $2}')"
@@ -26,6 +26,7 @@ function U-01() {
 			if [ "$suggestionValue" == "$currentValue" ]; then
                 		is_safe=true
 				currentValue="PermitRootLogin no"
+
         		fi
 		fi
 
@@ -40,7 +41,8 @@ function U-01() {
 		securityState="ERROR:설정파일 없음"
 	fi
 
+	suggestionValue="Set PermitRootLogin no or Comment"
+
 	securityLog "U-01|root 계정 원격 접속 제한" "$suggestionValue" "$currentValue" "$securityState"
 }
 
-U-01

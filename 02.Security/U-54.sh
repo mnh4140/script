@@ -13,7 +13,7 @@ function U-54()
 
         # 취약점 진단 기준 값
 	# KISA 권고 사항 : 600(10분) 이하/ 자체 진단 값 : 300(5분) 이하
-        suggestionValue="Session timeout set.\n\t\t\tTMOUT<=300"
+        #  suggestionValue="Session timeout set.\n\t\t\tTMOUT<=300"
 
         # 설정 항목 변수
 	suggestionValue=""
@@ -54,7 +54,13 @@ function U-54()
                         securityState="ERROR"
                 fi
         fi
+	
+	suggestionValue="Session timeout set.\n\t\t\tTMOUT<=300"
 
         securityLog "U-54|Session Timeout 설정" "$suggestionValue" "$currentValue" "$securityState"
-
+	
+	# 변수 초기화
+	securityState=""
+	currentValue=""
+	suggestionValue=""
 }

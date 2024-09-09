@@ -11,6 +11,9 @@ source U-47.sh
 source U-48.sh
 source U-54.sh
 # 2. 파일 및 디렉터리 관리
+source U-07.sh
+source U-08.sh
+source U-09.sh
 
 # 함수들
 
@@ -73,6 +76,7 @@ function filebackup() # 취약점 조치 시, 변경되는 파일 백업 수행
 ##########################################################################################
 
 function main() {
+	echo "# 1. 계정 관리"
 	U-01
 	U-02
 	U-03
@@ -82,6 +86,10 @@ function main() {
 	U-47
 	U-48
 	U-54
+	echo "# 2. 파일 및 디렉터리 관리"
+	U-07
+	U-08
+	U-09
 }
 
 main

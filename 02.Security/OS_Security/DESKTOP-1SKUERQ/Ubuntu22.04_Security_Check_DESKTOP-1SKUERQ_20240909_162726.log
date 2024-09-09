@@ -35,7 +35,7 @@
 
 
  6. [U-46|패스워드 최소 길이 설정]
-	- Check result:	[0;31m92854[0m
+	- Check result:	[0;31mERROR[0m
 	- Suggestion:	10
 	- Current:	
 
@@ -54,29 +54,21 @@
 
  9. [U-54|Session Timeout 설정]
 	- Check result:	[0;93mWARN:주석 처리 확인[0m
-	- Suggestion:	Session timeout set.
-			TMOUT<=300
+	- Suggestion:	
 	- Current:	
 
 
- 10. [U-07|/etc/passwd 파일 소유자 및 권한 설정]
-	- Check result:	[0;92mSAFE[0m
+ 10. [U-01|root 계정 원격 접속 제한]
+	- Check result:	[0;93mWARN:주석 처리 확인[0m
 	- Suggestion:	Set Permission 644 or less, Owner is root
 	- Current:	Permission : 644
 			Owner : root
 
 
- 11. [U-08|/etc/shadow 파일 소유자 및 권한 설정]
-	- Check result:	[0;93mWARN[0m
+ 11. [U-01|root 계정 원격 접속 제한]
+	- Check result:	[0;93mWARN:주석 처리 확인[0m
 	- Suggestion:	Set Permission 400, Owner is root
 	- Current:	Permission : 640
-			Owner : root
-
-
- 12. [U-09|/etc/hosts 파일 소유자 및 권한 설정]
-	- Check result:	[0;93mWARN[0m
-	- Suggestion:	Set Permission 600, Owner is root
-	- Current:	Permission : 644
 			Owner : root
 
 
