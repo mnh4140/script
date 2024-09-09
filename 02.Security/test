@@ -6,3 +6,9 @@
 #ocredit = -1
 TMOUT=300
 export   TMOUT
+#PermitRootLogin no
+# PermitRootLogin no
+#     PermitRootLogin no
+#PermitRootLogin
+# PermitRootLogin
+#     PermitRootLogin

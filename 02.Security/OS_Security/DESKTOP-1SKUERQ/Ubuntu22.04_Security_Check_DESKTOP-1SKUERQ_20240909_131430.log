@@ -1,0 +1,6 @@
+ 1. [U-01|root 계정 원격 접속 제한]
+	- Check result:	ERROR:설정파일 없음
+	- Suggestion:	Set PermitRootLogin no or Comment
+	- Current:	
+
+
