@@ -17,6 +17,8 @@ source U-09.sh
 source U-10.sh
 source U-11.sh
 source U-12.sh
+source U-14.sh
+source U-56.sh
 
 # 함수들
 
@@ -96,6 +98,8 @@ function main() {
 	U-10
 	U-11
 	U-12
+	U-14
+	U-56
 }
 
 main

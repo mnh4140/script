@@ -12,3 +12,4 @@ export   TMOUT
 #PermitRootLogin
 # PermitRootLogin
 #     PermitRootLogin
+umask 021
