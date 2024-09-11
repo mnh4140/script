@@ -19,6 +19,8 @@ source U-11.sh
 source U-12.sh
 source U-14.sh
 source U-56.sh
+#3. 서비스 관리
+source U-20.sh
 
 # 함수들
 
@@ -100,6 +102,8 @@ function main() {
 	U-12
 	U-14
 	U-56
+	echo "# 3.서비스 관리"
+	U-20
 }
 
 main

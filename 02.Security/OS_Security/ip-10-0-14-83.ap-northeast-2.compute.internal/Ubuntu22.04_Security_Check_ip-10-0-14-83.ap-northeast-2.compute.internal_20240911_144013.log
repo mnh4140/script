@@ -1,0 +1,6 @@
+ 1. [U-20|Anonymous FTP 비활성화]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	Anonymous FTP (익명 ftp) 접속을 차단
+	- Current:	ftp 
+
+
