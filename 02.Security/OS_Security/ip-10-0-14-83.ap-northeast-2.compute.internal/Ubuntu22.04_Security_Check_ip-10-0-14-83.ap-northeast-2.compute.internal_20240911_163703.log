@@ -1,0 +1,9 @@
+ 1. [U-65|at 파일 소유자 및 권한 설정]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	at 명령어 일반사용자 금지 및 at 관련 파일 640 이하
+	- Current:	script_test_config/at (권한: 644)
+			script_test_config/at.deny 권한이 640를 초과함 (현재 권한: 644)
+			script_test_config/at.allow 권한이 640를 초과함 (현재 권한: 644)
+			
+
+

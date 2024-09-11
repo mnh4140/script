@@ -36,7 +36,7 @@
 
 
  6. [U-46|패스워드 최소 길이 설정]
-	- Check result:	[0;31m37034[0m
+	- Check result:	[0;31mERROR[0m
 	- Suggestion:	10
 	- Current:	
 
