@@ -3,12 +3,20 @@
 source securityLog.sh
 source Initialize_variables.sh
 
-function U-65() {
+function U-68() {
         # 설정할 파일 경로
         # CONFIG_FILE="/etc/services"
-	at_files=("/etc/at.deny" "/etc/at.allow")
-	at_file="/usr/bin/at"
+	# at_files=("/etc/at.deny" "/etc/at.allow")
+	# at_file="/usr/bin/at"
         
+	cmp1=$(cat /etc/motd)
+	cmp2=$(cat /etc/issue.net)
+	cmp3=$(cat /etc/issue)
+
+	# /etc/motd : 사용자가 로그인 후에 표시되는 메시지(오늘의 메시지)
+	# /etc/issue : 로그인 전 로컬 콘솔에서 표시되는 메시지(운영체제 정보 등)
+	# /etc/issue.net : 로그인 전 원격 접속(SSH 등) 시 표시되는 메시지
+
 	# 결과 값
         is_safe=true
 
