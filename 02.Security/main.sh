@@ -25,6 +25,8 @@ source U-22.sh
 source U-65.sh
 source U-68.sh
 source U-69.sh
+# 5. 로그 관리 
+source U-72.sh
 
 # 함수들
 
@@ -112,6 +114,8 @@ function main() {
 	U-65
 	U-68
 	U-69
+	echo "# 5. 로그 관리 "
+	U-72
 }
 
 main

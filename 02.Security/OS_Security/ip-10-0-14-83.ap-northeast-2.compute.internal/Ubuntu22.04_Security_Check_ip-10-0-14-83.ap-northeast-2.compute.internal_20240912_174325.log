@@ -1,3 +1,10 @@
+ 1. [U-69|NFS설정파일 접근 권한]
+	- Check result:	[0;92mSAFE[0m
+	- Suggestion:	NFS 접근제어 설정파일의 소유자가 root 이고, 권한이 644 이하
+	- Current:	SAFE: /etc/exports (소유자: root, 권한: 644)
+			
+
+
  1. [U-01|root 계정 원격 접속 제한]
 	- Check result:	[0;92mSAFE[0m
 	- Suggestion:	Set PermitRootLogin no or Comment
@@ -36,9 +43,9 @@
 
 
  6. [U-46|패스워드 최소 길이 설정]
-	- Check result:	[0;92mSAFE[0m
+	- Check result:	[0;93mWARN[0m
 	- Suggestion:	10
-	- Current:	11
+	- Current:	8
 
 
  7. [U-47|패스워드 최대 사용기간 설정]

@@ -1,0 +1,17 @@
+ 1. [test|정책에 따른 시스템 로깅 설정]
+	- Check result:	[0;93mWARN[0m
+	- Suggestion:	*.info;mail.none;authpriv.none;cron.none	/var/log/messages
+			authpriv.*					/var/log/secure
+			mail.*					/var/log/maillog
+cron.*					/var/log/cron
+*.alert					/dev/console
+*.emerg *
+
+	- Current:	*.info;mail.none;authpriv.none;cron.none : /var/log/messages
+			authpriv.* : /var/log/secure
+			mail.* : -/var/log/maillog
+			cron.* : /var/log/cron
+			*.emerg : :omusrmsg:*
+			
+
+

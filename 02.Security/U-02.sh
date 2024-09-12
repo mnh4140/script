@@ -35,8 +35,8 @@ function U-02() {
 
 		if [ -z $current_value ]; then
 			currentValue+="$current_value"
-		else
 			current_key=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $1}' | tr -d ' ')
+		else
 			currentValue+="$current_key : $current_value\n\t\t\t"
 		fi
 
@@ -51,9 +51,9 @@ function U-02() {
 	if $all_safe; then
 		securityState="SAFE"
 	else
-		if [ -z $currentValue ]; then
+		if [ -z "$currentValue" ]; then
 			securityState="WARN:주석 처리 확인"
-		elif [ $suggestionValue != $currentValue ]; then
+		elif [ "$suggestionValue" != "$currentValue" ]; then
 			securityState="WARN"
 		else
 			securityState="ERROR"
