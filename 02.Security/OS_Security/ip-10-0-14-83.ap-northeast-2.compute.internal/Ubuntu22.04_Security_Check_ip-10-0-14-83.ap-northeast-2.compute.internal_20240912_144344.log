@@ -1,0 +1,7 @@
+ 1. [U-69|NFS설정파일 접근 권한]
+	- Check result:	[0;92mSAFE[0m
+	- Suggestion:	NFS 접근제어 설정파일의 소유자가 root 이고, 권한이 644 이하
+	- Current:	SAFE: /etc/exports (소유자: root, 권한: 644)
+			
+
+
