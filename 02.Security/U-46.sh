@@ -11,7 +11,6 @@ function U-46() {
     is_safe=true
 
     currentValue=$(grep "^minlen" script_test_config/test | awk -F " " '{print$3}')
-    echo "currentValue $currentValue"
 
     
     if [ "$currentValue" -ge "$suggestionValue" ]; then

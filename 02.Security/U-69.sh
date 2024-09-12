@@ -46,4 +46,3 @@ function U-69() {
 	# 변수 초기화
 	init_var
 }
-U-69
