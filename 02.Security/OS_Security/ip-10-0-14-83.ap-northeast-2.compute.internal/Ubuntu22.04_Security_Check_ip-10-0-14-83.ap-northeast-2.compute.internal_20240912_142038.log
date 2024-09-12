@@ -1,0 +1,9 @@
+ 1. [U-68|로그온 시 경고 메시지 제공]
+	- Check result:	ERROR:파일이 없음
+	- Suggestion:	서버 및 Telnet, FTP, SMTP, DNS 서비스에 로그온 메시지가 설정되어 있는 경우
+	- Current:	/etc/asdasdasd 	파일이 없음
+			/etc/issue.net 	경고 메시지 설정 안됨
+			/etc/issue 	경고 메시지 설정 안됨
+			
+
+

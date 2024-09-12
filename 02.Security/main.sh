@@ -23,6 +23,7 @@ source U-56.sh
 source U-20.sh
 source U-22.sh
 source U-65.sh
+source U-68.sh
 
 # 함수들
 
@@ -108,6 +109,7 @@ function main() {
 	U-20
 	U-22
 	U-65
+	U-68
 }
 
 main
