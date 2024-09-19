@@ -2,7 +2,11 @@
 
 #source core.sh
 #source menu.sh
-source menu.sh
+#source module/menu.sh
+#source ./check/Security_check.sh
+source ./module/textstyle.sh
+source ./module/menu.sh
+#source check/Security_check.sh
 #source Install_Ansible.sh
 #source Create_PublicKey.sh
 
