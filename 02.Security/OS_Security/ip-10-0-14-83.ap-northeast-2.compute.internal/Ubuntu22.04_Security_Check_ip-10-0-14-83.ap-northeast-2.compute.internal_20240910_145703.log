@@ -1,6 +1,0 @@
- 1. [U-14|사용자, 시스템 시작파일 및 환경파일 소유자 및 권한 설정]
-	- Check result:	[0;92mSAFE[0m
-	- Suggestion:	환경변수 파일 소유자가 root 또는 해당 사용자이고, 권한이 644 이하
-	- Current:	SAFE: /home/rocky/.bashrc (소유자: rocky, 권한: 644)SAFE: /home/rocky/.bash_profile (소유자: rocky, 권한: 644)SAFE: /home/rocky/.bash_logout (소유자: rocky, 권한: 644)SAFE: /home/rocky/.bash_history (소유자: rocky, 권한: 600)
-
-

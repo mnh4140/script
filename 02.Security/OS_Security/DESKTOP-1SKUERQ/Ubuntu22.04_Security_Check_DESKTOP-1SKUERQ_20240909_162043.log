@@ -1,7 +1,0 @@
- 1. [U-01|root 계정 원격 접속 제한]
-	- Check result:	[0;93mWARN[0m
-	- Suggestion:	Set Permition 644 or less, Owner is root
-	- Current:	Permission : 644
-			Owner : root
-
-

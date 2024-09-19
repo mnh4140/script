@@ -1,7 +1,0 @@
- 1. [U-54|Session Timeout 설정]
-	- Check result:	[1;33mWARN:주석 처리 확인[0m
-	- Suggestion:	Session timeout set.
-			TMOUT<=300
-	- Current:	
-
-

@@ -1,7 +1,0 @@
- 1. [U-11|/etc/rsyslog.conf 파일 소유자 및 권한 설정]
-	- Check result:	[0;92mSAFE[0m
-	- Suggestion:	Set Permission 644, Owner is root
-	- Current:	Permission : 644
-			Owner : root
-
-

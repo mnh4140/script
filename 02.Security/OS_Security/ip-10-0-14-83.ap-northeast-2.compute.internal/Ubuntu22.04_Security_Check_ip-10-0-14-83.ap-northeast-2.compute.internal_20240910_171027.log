@@ -1,6 +1,0 @@
- 1. [U-56|UMASK 설정 관리]
-	- Check result:	
-	- Suggestion:	/etc/profile UMASK 값이 022 이상로 설정
-	- Current:	/etc/profile UMASK : 021
-
-
