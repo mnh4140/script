@@ -1,7 +1,7 @@
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 function pause() {
-    echo -e "\n${CYAN}Please any key to continue..."
+    echo -e "\n${CYAN}Please any key to continue...${RESET}"
     read -n 1
 }
 
