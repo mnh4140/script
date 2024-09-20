@@ -38,7 +38,8 @@ Num=0
 #checkResultLog2="Ubuntu22.04_Security_Check_$hostname.log"
 
 ## 테스트 용 로깅 변수
-logPATH="$(pwd)/OS_Security/$hostname"
+#logPATH="$(pwd)/OS_Security/$hostname"
+logPATH="$(pwd)/Log/Security_check/$hostname"
 checkResultLog1="${osname}_${osver}_Check_${hostname}_${dateFormat}.log"
 checkResultLog2="${osname}_${osver}_Check_$hostname.log"
 
