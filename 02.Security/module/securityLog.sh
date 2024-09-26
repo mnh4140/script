@@ -3,11 +3,18 @@
 userName=$(whoami)
 hostname=$(hostname)
 currentDate=$(date)
+<<<<<<< Updated upstream
 #osInfo=$(grep PRETTY_NAME /etc/os-release | awk -F '"' '{print $2}')
 osname=$(grep "^ID=" /etc/os-release | awk -F '"' '{print $2}')
 osname=$(grep "^NAME=" /etc/os-release | awk -F '"' '{print $2}' | sed 's/ /_/g')
 osver=$(grep "VERSION_ID=" /etc/os-release | awk -F '"' '{print $2}')
 
+=======
+#osInfo=$(grep PRETTY_NAME /etc/os-release | awk -F "\"" '{ print$2 }')
+#osname=$(grep "^ID=" /etc/os-release | awk -F '"' '{print $2}')
+osname=$(grep "^NAME=" /etc/os-release | awk -F '"' '{print $2}' | sed 's/ /_/g')
+osver=$(grep "VERSION_ID=" /etc/os-release | awk -F '"' '{print $2}')
+>>>>>>> Stashed changes
 
 # 텍스트 색상 및 스타일 설정
 RESET='\033[0m'       # 기본 색상 및 스타일
@@ -38,10 +45,17 @@ Num=0
 #checkResultLog2="Ubuntu22.04_Security_Check_$hostname.log"
 
 ## 테스트 용 로깅 변수
+<<<<<<< Updated upstream
 #logPATH="$(pwd)/OS_Security/$hostname"
 logPATH="$(pwd)/Log/Security_check/$hostname"
 checkResultLog1="${osname}_${osver}_Check_${hostname}_${dateFormat}.log"
 checkResultLog2="${osname}_${osver}_Check_$hostname.log"
+=======
+logPATH="$(pwd)/OS_Security/$hostname"
+checkResultLog1="${osname}_${osver}_Check_${hostname}_${dateFormat}.log"
+checkResultLog2="${osname}_${osver}_Check_$hostname.log"
+
+>>>>>>> Stashed changes
 
 # 통합용 로그 초기화
 if [ -f "$logPATH/$checkResultLog2" ]; then
