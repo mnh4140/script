@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /root/github/02.Security/module/securityLog.sh
+source securityLog.sh
 
 # Rocky Linux 9.x 전용
 
@@ -37,9 +37,33 @@ function U-02() {
                 recommended_value="${settings[$value]}"
                 suggestionValue+="$value : $recommended_value\n\t\t\t"
 
-                # 주석이 아닌 설정 값을 찾기
-                current_value=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $2}' | tr -d ' ')
+                # 조치 전 값 저장
+                before_value=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $2}' | tr -d ' ')
+		beforeValue+="$value : $before_value\n\t\t\t"
 
+		echo "stsrt if"
+		# 조치
+		# 값이 없으면 추가
+		if [ -z $before_value ]; then
+			echo "before_value : $before_value"
+			echo "$value = $recommended_value" >> "$CONFIG_FILE"
+			#afterValue+="$value : $before_value\n\t\t\t"
+		else
+			if [ "$before_value" = "$recommended_value" ]; then
+				echo "권장 설정 값으로 설정되어 있습니다."
+				#afterValue+="$value : $before_value\n\t\t\t"
+			else
+				echo "권장 설정값과 다릅니다."
+				echo "설정을 변경합니다."
+				sed -i -e "s/$value\s=\s$before_value/$value = $recommended_value/g" $CONFIG_FILE
+				#after_value=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $2}' | tr -d ' ')
+				#afterValue+="$value : $after_value\n\t\t\t"
+			fi
+		fi
+		after_value=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $2}' | tr -d ' ')
+                afterValue+="$value : $after_value\n\t\t\t"
+	done
+: << "END"
                 if [ -z $current_value ]; then
                         currentValue+="$current_value"
                         current_key=$(grep -E "^\s*$value\s*=" "$CONFIG_FILE" | awk -F '=' '{print $1}' | tr -d ' ')
@@ -79,7 +103,7 @@ END
 	echo "설정이 완료되었습니다."
 
 	# 로깅
-	securityLog "U-02|패스워드 복잡성 설정" "$suggestionValue" "$currentValue" "$securityState"
+	FixLog "U-02|패스워드 복잡성 설정" "$suggestionValue" "$beforeValue" "$afterValue" "$securityState"
 
 }
 U-02

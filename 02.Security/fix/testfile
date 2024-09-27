@@ -1,5 +1,6 @@
-minlen = 2
-dcredit = -3
-ucredit = -44
-lcredit = 3
-ocredit = 1
+minlen = 10
+dcredit = -1
+#ucredit = -1
+lcredit = -1
+ocredit = -1
+ucredit = -1

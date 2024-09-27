@@ -1,0 +1,11 @@
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Current:	
+
+

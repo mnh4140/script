@@ -6,11 +6,12 @@
 			lcredit : -1
 			ocredit : -1
 			
-	- Current:	minlen : 2
-			dcredit : -3
-			ucredit : -44
-			lcredit : 3
-			ocredit : 1
+	- Before:	minlen : 
+			dcredit : 
+			ucredit : 
+			lcredit : 
+			ocredit : 
 			
+	- After:	
 
 

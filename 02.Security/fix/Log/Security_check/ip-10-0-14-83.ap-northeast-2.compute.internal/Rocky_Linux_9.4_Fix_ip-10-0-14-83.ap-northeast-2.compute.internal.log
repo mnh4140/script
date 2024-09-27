@@ -1,0 +1,517 @@
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -44
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : 
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 
+			dcredit : 
+			ucredit : -1
+			lcredit : 
+			ocredit : 
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 2
+			dcredit : -3
+			ucredit : -1
+			lcredit : 3
+			ocredit : 1
+			
+	- After:	minlen : 
+			dcredit : 
+			ucredit : -1
+			lcredit : 
+			ocredit : 
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	ucredit : -1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 
+			dcredit : 
+			ucredit : -1
+			lcredit : 
+			ocredit : 
+			
+	- After:	ucredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 
+			dcredit : 
+			ucredit : 
+			lcredit : 
+			ocredit : 
+			
+	- After:	
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 
+			dcredit : 
+			lcredit : 
+			ocredit : -1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 50
+			dcredit : -22
+			ucredit : 
+			lcredit : 12
+			ocredit : -1
+			
+	- After:	minlen : 
+			dcredit : 
+			lcredit : 
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 10
+			dcredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 30
+			dcredit : 1
+			ucredit : 
+			lcredit : 0
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 20
+			dcredit : 7
+			ucredit : 
+			lcredit : 1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 10
+			dcredit : -1
+			ucredit : 
+			lcredit : -1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : 
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Befor:	minlen : 70
+			dcredit : 7
+			ucredit : 
+			lcredit : -1
+			ocredit : 9999
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+

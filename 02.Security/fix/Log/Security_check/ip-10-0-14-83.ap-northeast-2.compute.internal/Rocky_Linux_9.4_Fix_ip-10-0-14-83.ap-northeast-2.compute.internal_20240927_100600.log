@@ -1,0 +1,27 @@
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Before:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
