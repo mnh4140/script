@@ -4,8 +4,10 @@
 #source menu.sh
 #source module/menu.sh
 #source ./check/Security_check.sh
-source ./module/textstyle.sh
-source ./module/menu.sh
+#source ./module/textstyle.sh
+source /root/WinsCloud/02.Security/module/textstyle.sh
+#source ./module/menu.sh
+source /root/WinsCloud/02.Security/module/menu.sh
 #source check/Security_check.sh
 #source Install_Ansible.sh
 #source Create_PublicKey.sh

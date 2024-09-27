@@ -29,17 +29,18 @@ function menu()
 
         	case $select in      
                 	1)
-				source $SCRIPT_DIR/filebackup.sh
+				#source $SCRIPT_DIR/filebackup.sh
+				source /root/WinsCloud/02.Security/module/filebackup.sh
 				backup
 			       	pause
 				;;
 			2)
-				source $SCRIPT_DIR/../check/Security_check.sh
+				source /root/WinsCloud/02.Security/check/Security_check.sh
 				check
 				pause
 				;;
 			3)
-				source Security_fix.sh
+				source /root/WinsCloud/02.Security/fix/Security_fix.sh
 				fix
 				pause
 				;;
