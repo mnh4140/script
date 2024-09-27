@@ -1,6 +1,11 @@
+# U-02 test
 minlen = 10
 dcredit = -1
 #ucredit = -1
 lcredit = -1
 ocredit = -1
 ucredit = -1
+
+# U-03 test
+#deny = 5
+deny = 5

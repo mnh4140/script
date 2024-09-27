@@ -1,0 +1,29 @@
+ 1. [U-02|패스워드 복잡성 설정]
+	- Check result:	
+	- Suggestion:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- Before:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+	- After:	minlen : 10
+			dcredit : -1
+			ucredit : -1
+			lcredit : -1
+			ocredit : -1
+			
+
+
+ 2. [U-03|계정 잠금 임계값 설정]
+	- Check result:	[0;92mFIX[0m
+	- Suggestion:	5
+	- Before:	10
+	- After:	5
+
+

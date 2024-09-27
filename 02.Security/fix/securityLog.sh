@@ -39,7 +39,7 @@ Num=0
 
 ## 테스트 용 로깅 변수
 #logPATH="$(pwd)/OS_Security/$hostname"
-logPATH="$(pwd)/Log/Security_check/$hostname"
+logPATH="$(pwd)/Log/Security/$hostname"
 checkResultLog1="${osname}_${osver}_Check_${hostname}_${dateFormat}.log"
 checkResultLog2="${osname}_${osver}_Check_$hostname.log"
 fixResultLog1="${osname}_${osver}_Fix_${hostname}_${dateFormat}.log"
@@ -105,11 +105,11 @@ function FixLog() {
         echo -e "\t- Check result:\t${GREEN}$5\e[0m" | tee -a "$logPATH/$fixResultLog1"
         echo -e "\t- Check result:\t${GREEN}$5\e[0m" >> "$logPATH/$fixResultLog2"
 
-    elif [[ "$5" == *"WARN"* ]]; then
-        echo -e "\t- Check result:\t${YELLOW}$5\e[0m" | tee -a "$logPATH/$fixResultLog1"
-        echo -e "\t- Check result:\t${YELLOW}$5\e[0m" >> "$logPATH/$fixResultLog2"
+    elif [ "$5" = "FIX" ]; then
+        echo -e "\t- Check result:\t${GREEN}$5\e[0m" | tee -a "$logPATH/$fixResultLog1"
+        echo -e "\t- Check result:\t${GREEN}$5\e[0m" >> "$logPATH/$fixResultLog2"
 
-    elif [ "$5" = "ERROR" ]; then
+    elif [ "$5" = "NOT FIX" ]; then
         echo -e "\t- Check result:\t${RED}$5\e[0m" | tee -a "$logPATH/$fixResultLog1"
         echo -e "\t- Check result:\t${RED}$5\e[0m" >> "$logPATH/$fixResultLog2"
 
