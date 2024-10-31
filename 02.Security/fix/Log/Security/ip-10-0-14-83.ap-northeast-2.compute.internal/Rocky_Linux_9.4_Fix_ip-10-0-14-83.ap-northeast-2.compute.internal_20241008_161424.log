@@ -1,0 +1,7 @@
+ 1. [U-45|root 계정 su 제한]
+	- Check result:	[0;92mFIX[0m
+	- Suggestion:	auth		required		pam_wheel.so use_uid
+	- Before:	
+	- After:	auth		required		pam_wheel.so use_uid
+
+

@@ -10,10 +10,10 @@ source "$FIX_DIR/securityLog.sh"
 
 ## 1. 계정 관리
 #source "$FIX_DIR/U-01.sh"
-source "$FIX_DIR/fix-U-02.sh"
-source "$FIX_DIR/fix-U-03.sh"
+### source "$FIX_DIR/fix-U-02.sh"
+### source "$FIX_DIR/fix-U-03.sh"
 #source "$FIX_DIR/U-04.sh"
-#source "$FIX_DIR/U-45.sh"
+source "$FIX_DIR/U-45.sh"
 #source "$FIX_DIR/U-46.sh"
 #source "$FIX_DIR/U-47.sh"
 #source "$FIX_DIR/U-48.sh"
@@ -43,8 +43,9 @@ source "$FIX_DIR/fix-U-03.sh"
 function fix() {
 	echo "# 1. 계정 관리"
 	#U-01
-	U-02
-	U-03
+	### U-02
+	### U-03
+	U-45
 : << END
 	U-04
 	U-45

@@ -1,0 +1,8 @@
+ 1. [U-45|root 계정 su 제한]
+	- Check result:	[0;92mFIX[0m
+	- Suggestion:	auth		required		pam_wheel.so use_uid
+	- Before:	[0;34mThe wheel group exists.[0m[0;34m
+			pam_wheel.so configuration set[0m
+	- After:	auth		required		pam_wheel.so use_uid
+
+

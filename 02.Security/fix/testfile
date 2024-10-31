@@ -9,3 +9,10 @@ ucredit = -1
 # U-03 test
 #deny = 5
 deny = 5
+auth		required		pam_wheel.so use_uid
+wheel:x:10:
+$suggestionValue
+$suggestionValue
+$suggestionValue
+$suggestionValue
+account         sufficient      pam_succeed_if.so uid = 0 use_uid quiet
